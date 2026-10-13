@@ -3,6 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com https://accounts.google.com; style-src 'self' 'unsafe-inline' https://accounts.google.com; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://www.googleapis.com https://accounts.google.com https://oauth2.googleapis.com https://cdnjs.cloudflare.com data: blob:; frame-src https://accounts.google.com blob: data:; worker-src 'self' blob: https://cdnjs.cloudflare.com; object-src 'none'; base-uri 'none'; form-action 'self'">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
 <title>Auditor SG-SST · Herramienta técnica de auditoría</title>
 <style>
   :root{
@@ -463,9 +466,68 @@
   .pf-empty{font-size:13px;color:var(--muted);flex:1}
   .pf-note{font-size:12px;color:var(--muted);margin-top:10px}
   @media(max-width:860px){.perf-grid{grid-template-columns:1fr}}
+
+  /* ---------- Acceso (login) y estado de guardado ---------- */
+  body.bloqueado > :not(#acceso):not(#toast):not(.modal-bg):not(script){display:none!important}
+  #acceso{display:none}
+  body.bloqueado #acceso{display:grid;min-height:100vh;place-items:center;padding:24px;
+    background:linear-gradient(180deg,var(--brand-2) 0 46%,var(--paper) 46% 100%)}
+  .acc-card{width:100%;max-width:400px;background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:28px 28px 22px;box-shadow:0 12px 32px rgba(16,38,58,.16)}
+  .acc-logo{display:block;height:56px;width:auto;margin:0 0 18px}
+  .acc-card h1{font-size:22px;color:var(--ink)}
+  .acc-sub{font-size:13.5px;color:var(--muted);margin:6px 0 18px}
+  .acc-card label{display:block;font-size:13px;font-weight:600;margin:0 0 5px}
+  .acc-card input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;margin:0 0 14px;background:#fff}
+  .acc-card input:focus-visible,.acc-card button:focus-visible{outline:3px solid var(--brand);outline-offset:1px}
+  .acc-card .btn{width:100%;padding:11px}
+  .acc-card .btn[disabled]{opacity:.6;cursor:wait}
+  .acc-link{background:none;border:0;padding:0;color:var(--brand-2);font-size:13px;text-decoration:underline;margin-top:14px}
+  #accMsg{font-size:13px;margin-top:12px;min-height:1em}
+  #accMsg[data-tipo=error]{color:var(--no)}
+  #accMsg[data-tipo=ok]{color:var(--ok)}
+  .acc-f,.acc-card .btn.acc-f{display:none}
+  #acceso[data-modo=login] .m-login, #acceso[data-modo=olvido] .m-olvido, #acceso[data-modo=nueva] .m-nueva{display:block}
+  #acceso[data-modo=login] .m-login.btn, #acceso[data-modo=olvido] .m-olvido.btn{display:block}
+  #acceso[data-modo=cargando] .acc-sub{display:none}
+  .sesion{display:flex;align-items:center;gap:10px;margin-left:auto}
+  .user-mail{font-size:12.5px;opacity:.9;max-width:190px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .sync{font-size:12px;padding:3px 9px;border-radius:999px;background:rgba(255,255,255,.14);white-space:nowrap}
+  .sync[data-estado=ok]::before{content:"● ";color:var(--brand)}
+  .sync[data-estado=pendiente]::before,.sync[data-estado=guardando]::before{content:"● ";color:#ffd27a}
+  .sync[data-estado=error],.sync[data-estado=conflicto]{background:#fbeae8;color:var(--no);font-weight:600}
+  @media print{.sesion{display:none!important}}
 </style>
 </head>
-<body>
+<body class="bloqueado">
+
+<div id="acceso" data-modo="cargando" role="main">
+  <div class="acc-card">
+    <img class="acc-logo" id="accLogo" alt="">
+    <h1>Auditor SG-SST</h1>
+    <p class="acc-sub" id="accSub"></p>
+    <form id="accForm" novalidate>
+      <div class="acc-f m-login m-olvido">
+        <label for="accEmail">Correo</label>
+        <input id="accEmail" type="email" autocomplete="username" inputmode="email" spellcheck="false">
+      </div>
+      <div class="acc-f m-login">
+        <label for="accPass">Contraseña</label>
+        <input id="accPass" type="password" autocomplete="current-password">
+      </div>
+      <div class="acc-f m-nueva">
+        <label for="accPass1">Contraseña nueva</label>
+        <input id="accPass1" type="password" autocomplete="new-password" minlength="10">
+        <label for="accPass2">Repite la contraseña</label>
+        <input id="accPass2" type="password" autocomplete="new-password" minlength="10">
+      </div>
+      <button class="btn acc-f m-login m-olvido m-nueva" id="accBtn" type="submit">Ingresar</button>
+    </form>
+    <button class="acc-link acc-f m-login" id="accOlvido" type="button">Olvidé mi contraseña</button>
+    <button class="acc-link acc-f m-olvido" id="accVolver" type="button">Volver a ingresar</button>
+    <div id="accMsg" role="status" aria-live="polite"></div>
+  </div>
+</div>
 
 <header class="top">
   <div class="wrap">
@@ -485,6 +547,11 @@
       <input type="file" id="fImport" accept=".json,application/json" style="display:none">
       <button class="btn sm" id="btnNew">+ Nueva auditoría</button>
     </div>
+    <div class="sesion no-print">
+      <span class="sync" id="syncEstado" aria-live="polite"></span>
+      <span class="user-mail" id="userMail"></span>
+      <button class="btn ghost sm" id="btnSalir">Salir</button>
+    </div>
   </div>
 </header>
 
@@ -492,11 +559,6 @@
 
   <!-- ============ DASHBOARD ============ -->
   <section class="view active" id="viewDash">
-    <div class="apikey-banner no-print" id="iaBanner">
-      <b>Análisis con IA:</b>
-      <span>Para que el asistente redacte o complemente los hallazgos a partir de tu lista de chequeo, configura tu clave de Anthropic. El resto de la herramienta funciona sin ella.</span>
-      <button class="btn gold sm" id="btnKey">Configurar clave</button>
-    </div>
 
     <div class="welcome no-print" id="welcome"></div>
 
@@ -538,7 +600,7 @@
     <div class="dash-head">
       <div>
         <h2 style="font-size:24px">Perfiles de auditores</h2>
-        <p>Crea el perfil de cada auditor y carga por separado los soportes de su competencia. Estos perfiles se seleccionan al crear una auditoría. Los cambios se guardan automáticamente en este navegador y viajan en el respaldo.</p>
+        <p>Crea el perfil de cada auditor y carga por separado los soportes de su competencia. Estos perfiles se seleccionan al crear una auditoría. Los cambios se guardan automáticamente en tu cuenta y viajan en el respaldo.</p>
       </div>
     </div>
     <div class="filters no-print" id="pfList"></div>
@@ -572,7 +634,7 @@
       </div>
       <div>
         <div class="pf-docs" id="pfDocs"></div>
-        <div class="pf-note">Formatos admitidos: PDF, JPG o PNG, hasta 3 MB por documento. Los archivos quedan guardados solo en este navegador; descarga un respaldo con frecuencia.</div>
+        <div class="pf-note">Formatos admitidos: PDF, JPG o PNG, hasta 3 MB por documento. Los archivos se guardan en el almacenamiento privado de tu cuenta; solo tú puedes verlos.</div>
         <div class="perf-card" id="pfGcal" style="margin-top:14px">
           <h3>Google Calendar</h3>
           <p class="d" style="font-size:12.5px;color:var(--muted);margin:0 0 10px">Conecta el calendario de este auditor para ver en el panel «Calendario» los eventos que cree como auditorías. La app solo lee los eventos; no los modifica.</p>
@@ -776,11 +838,11 @@
     <div id="cierreAviso" style="font-size:13px;margin-bottom:10px"></div>
     <div class="field" id="cierreFortBox"><label for="cierreFort">Fortalezas</label>
       <textarea id="cierreFort" rows="6" placeholder="Se destaca el alto nivel de implementación... (puedes dejarlo vacío para que el informe use un texto automático con el puntaje)"></textarea>
-      <div style="margin-top:6px"><button class="btn gold sm" id="cierreIA" type="button" onclick="fortalezasIA()">✨ Redactar con IA</button>
+      <div style="margin-top:6px"><button class="btn gold sm" id="cierreIA" type="button" onclick="fortalezasIA()">📝 Redactar borrador</button>
       <span class="hint" style="font-size:11.5px;color:var(--muted)">Usa solo lo registrado en la auditoría; revísalo antes de cerrar.</span></div></div>
     <div class="field" id="cierreDebBox"><label for="cierreDeb">Debilidades</label>
       <textarea id="cierreDeb" rows="6" placeholder="Se identifican debilidades en... (puedes dejarlo vacío para que el informe use un texto automático con las no conformidades)"></textarea>
-      <div style="margin-top:6px"><button class="btn gold sm" id="cierreDebIA" type="button" onclick="debilidadesIA()">✨ Redactar con IA</button>
+      <div style="margin-top:6px"><button class="btn gold sm" id="cierreDebIA" type="button" onclick="debilidadesIA()">📝 Redactar borrador</button>
       <span class="hint" style="font-size:11.5px;color:var(--muted)">Usa solo las no conformidades y oportunidades de mejora registradas; revísalo antes de cerrar.</span></div></div>
     <div class="modal-foot">
       <button class="btn sec" type="button" id="cierreCancel" onclick="cierreCancelar()">Cancelar</button>
@@ -817,18 +879,6 @@
   </div>
 </div>
 
-<!-- Modal clave -->
-<div class="modal-bg" id="keyBg">
-  <div class="modal" style="max-width:460px">
-    <h2>Clave de IA (Anthropic)</h2>
-    <p style="font-size:13px;color:var(--muted);margin:0 0 12px">Necesaria para usar el análisis con IA desde tu computador. Se guarda únicamente en este navegador.</p>
-    <div class="field"><input id="fKey" placeholder="sk-ant-..." type="password"></div>
-    <div class="modal-foot">
-      <button class="btn sec" id="kCancel">Cancelar</button>
-      <button class="btn" id="kSave">Guardar clave</button>
-    </div>
-  </div>
-</div>
 
 <!-- Confirmación propia (los confirm() del navegador se bloquean en algunos entornos) -->
 <div class="modal-bg" id="confBg" style="z-index:120">
@@ -844,6 +894,290 @@
 
 <div class="toast" id="toast"></div>
 
+<script>
+/* =====================================================================
+   CONFIGURACIÓN — lo único que se edita al desplegar.
+   La "anon/publishable key" de Supabase es pública por diseño: la
+   seguridad la dan las políticas RLS. NUNCA pongas aquí la service_role,
+   la secret key de Supabase.
+   ===================================================================== */
+const CONFIG = {
+  SUPABASE_URL: "https://tkonkkkhbhxfgjbzhuwr.supabase.co",
+  SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRrb25ra2toYmh4ZmdqYnpodXdyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEzODUzNjcsImV4cCI6MjEwNjk2MTM2N30.cTc21ucVYUQUI49_MLGi-FgQyaz04VertSzXb4q769k",
+  RECORDAR_SESION: false,   // false: la sesión se cierra al cerrar la pestaña (recomendado en equipos compartidos)
+  INACTIVIDAD_MIN: 60       // cierre automático de sesión tras N minutos sin actividad (0 = desactivado)
+};
+
+/* =====================================================================
+   NUBE: acceso con usuario y guardado en Supabase
+   - Los datos viven en la tabla auditor_estado (una fila por usuario, RLS).
+   - Fotos, firmas, logos, soportes y evidencias se suben al bucket privado
+     "auditor-archivos" bajo <user_id>/<sha256>; en la tabla solo queda
+     la referencia "sbfile:<hash>:<mime>".
+   - Nada de la información de auditorías se guarda en el navegador.
+   ===================================================================== */
+const NUBE = (() => {
+  const BUCKET = "auditor-archivos", TABLA = "auditor_estado", PREF = "sbfile:";
+  const MIN_ARCHIVO = 2048;                 // data URLs más pequeñas se quedan dentro del JSON
+  let sb = null, user = null, version = 0, existe = false;
+  let sucio = false, enCurso = null, timer = null, bloqueado = false, ultimaAct = Date.now();
+  const subidos = new Set();                // hashes que ya están en Storage
+  const hashDe = new Map();                 // data URL -> hash
+
+  const $ = id => document.getElementById(id);
+  const cfgOk = () => /^https:\/\/.+/.test(CONFIG.SUPABASE_URL) && !CONFIG.SUPABASE_URL.includes("TU-PROYECTO")
+    && CONFIG.SUPABASE_ANON_KEY && !CONFIG.SUPABASE_ANON_KEY.startsWith("TU_");
+
+  /* ---------- utilidades ---------- */
+  async function sha256(str) {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+    return [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2, "0")).join("");
+  }
+  const blobADataUrl = blob => new Promise((ok, ko) => {
+    const rd = new FileReader(); rd.onload = () => ok(rd.result); rd.onerror = () => ko(rd.error); rd.readAsDataURL(blob);
+  });
+  function recorrer(v, fn) {
+    if (typeof v === "string") return fn(v);
+    if (Array.isArray(v)) return v.map(x => recorrer(x, fn));
+    if (v && typeof v === "object") { const o = {}; for (const k in v) o[k] = recorrer(v[k], fn); return o; }
+    return v;
+  }
+  const esArchivo = s => s.length >= MIN_ARCHIVO && s.startsWith("data:") && s.includes(";base64,");
+  const mimeDe = s => s.slice(5, s.indexOf(";"));
+
+  /* ---------- archivos: data URL <-> Storage ---------- */
+  async function deshidratar(db) {
+    const urls = new Set();
+    recorrer(db, s => { if (esArchivo(s)) urls.add(s); return s; });
+    for (const u of urls) {
+      let h = hashDe.get(u);
+      if (!h) { h = await sha256(u); hashDe.set(u, h); }
+      if (subidos.has(h)) continue;
+      const blob = dataUrlToBlob(u);
+      const { error } = await sb.storage.from(BUCKET).upload(`${user.id}/${h}`, blob,
+        { contentType: blob.type || "application/octet-stream", upsert: false });
+      if (error && !/exist|duplicate/i.test(error.message || "")) throw error;
+      subidos.add(h);
+    }
+    return recorrer(db, s => esArchivo(s) ? `${PREF}${hashDe.get(s)}:${mimeDe(s)}` : s);
+  }
+  async function hidratar(datos) {
+    const refs = new Set();
+    recorrer(datos, s => { if (s.startsWith(PREF)) refs.add(s); return s; });
+    const lista = [...refs], mapa = new Map(); let i = 0, fallos = 0;
+    async function trabajador() {
+      while (i < lista.length) {
+        const ref = lista[i++], [, h, mime] = ref.split(":");
+        const { data, error } = await sb.storage.from(BUCKET).download(`${user.id}/${h}`);
+        if (error || !data) { fallos++; continue; }
+        const url = await blobADataUrl(mime ? new Blob([data], { type: mime }) : data);
+        mapa.set(ref, url); hashDe.set(url, h); subidos.add(h);
+      }
+    }
+    await Promise.all(Array.from({ length: Math.min(6, lista.length) }, trabajador));
+    return { db: recorrer(datos, s => mapa.get(s) || s), fallos };
+  }
+
+  /* ---------- estado de guardado ---------- */
+  function estado(tipo) {
+    const el = $("syncEstado"); if (!el) return;
+    const txt = { ok: "Guardado", pendiente: "Cambios sin guardar", guardando: "Guardando…",
+      error: "Sin conexión, reintentando", conflicto: "Conflicto: recarga" }[tipo] || "";
+    el.textContent = txt; el.dataset.estado = tipo;
+  }
+  function marcar() {
+    if (!user || bloqueado) return;
+    sucio = true; estado("pendiente");
+    clearTimeout(timer); timer = setTimeout(sincronizar, 1200);
+  }
+  function sincronizar() {
+    if (enCurso) return enCurso;
+    enCurso = (async () => {
+      while (sucio && !bloqueado) {
+        sucio = false; estado("guardando");
+        try {
+          const datos = await deshidratar(DB);
+          if (existe) {
+            const { data, error } = await sb.from(TABLA).update({ datos, version: version + 1 })
+              .eq("user_id", user.id).eq("version", version).select("version");
+            if (error) throw error;
+            if (!data.length) { bloqueado = true; estado("conflicto"); avisarConflicto(); return; }
+            version = data[0].version;
+          } else {
+            const { data, error } = await sb.from(TABLA).insert({ user_id: user.id, datos, version: 1 }).select("version");
+            if (error) throw error;
+            existe = true; version = data[0].version;
+          }
+        } catch (err) {
+          console.error("Guardado en la nube:", err);
+          sucio = true; estado("error");
+          clearTimeout(timer); timer = setTimeout(sincronizar, 8000);
+          return;
+        }
+      }
+      if (!sucio && !bloqueado) estado("ok");
+    })().finally(() => { enCurso = null; });
+    return enCurso;
+  }
+  async function avisarConflicto() {
+    const ok = await preguntar("Tus datos se modificaron desde otra pestaña o equipo. Los cambios hechos aquí desde ese momento no se guardaron. Si los necesitas, descarga primero un respaldo; luego recarga para ver la versión más reciente.", "Recargar ahora", "Datos modificados en otra sesión");
+    if (ok) location.reload();
+  }
+
+  /* ---------- pantalla de acceso ---------- */
+  function pantalla(modo, msg, tipoMsg) {
+    document.body.classList.add("bloqueado");
+    const card = $("acceso"); card.dataset.modo = modo;
+    $("accMsg").textContent = msg || ""; $("accMsg").dataset.tipo = tipoMsg || "";
+    const sub = {
+      login: "Ingresa con la cuenta que te asignó el administrador.",
+      olvido: "Escribe tu correo y te enviaremos un enlace para crear una contraseña nueva.",
+      nueva: "Crea tu contraseña nueva. Usa al menos 10 caracteres.",
+      cargando: "",
+      config: ""
+    }[modo] ?? "";
+    $("accSub").textContent = sub;
+    const btn = { login: "Ingresar", olvido: "Enviar enlace", nueva: "Guardar contraseña" }[modo];
+    if (btn) $("accBtn").textContent = btn;
+    if (modo === "login" || modo === "olvido") setTimeout(() => $("accEmail").focus(), 30);
+    if (modo === "nueva") setTimeout(() => $("accPass1").focus(), 30);
+  }
+  function abrirApp() { document.body.classList.remove("bloqueado"); }
+
+  async function enviarForm(ev) {
+    ev.preventDefault();
+    const modo = $("acceso").dataset.modo, btn = $("accBtn");
+    btn.disabled = true;
+    try {
+      if (modo === "login") {
+        const { data, error } = await sb.auth.signInWithPassword({ email: $("accEmail").value.trim(), password: $("accPass").value });
+        if (error) throw new Error(/invalid/i.test(error.message) ? "Correo o contraseña incorrectos." : error.message);
+        $("accPass").value = "";
+        await entrar(data.user);
+      } else if (modo === "olvido") {
+        const email = $("accEmail").value.trim();
+        if (!email) throw new Error("Escribe tu correo.");
+        const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+        if (error) throw error;
+        pantalla("login", "Si el correo está registrado, te llegará un enlace en unos minutos.", "ok");
+      } else if (modo === "nueva") {
+        const p1 = $("accPass1").value, p2 = $("accPass2").value;
+        if (p1.length < 10) throw new Error("La contraseña debe tener al menos 10 caracteres.");
+        if (p1 !== p2) throw new Error("Las contraseñas no coinciden.");
+        const { data, error } = await sb.auth.updateUser({ password: p1 });
+        if (error) throw error;
+        $("accPass1").value = $("accPass2").value = "";
+        history.replaceState(null, "", location.pathname);
+        toast("Contraseña actualizada");
+        await entrar(data.user);
+      }
+    } catch (err) {
+      $("accMsg").textContent = err.message || "No se pudo completar la operación."; $("accMsg").dataset.tipo = "error";
+    } finally { btn.disabled = false; }
+  }
+
+  /* ---------- sesión ---------- */
+  async function entrar(u) {
+    user = u; pantalla("cargando", "Cargando tus auditorías…");
+    const { data, error } = await sb.from(TABLA).select("datos,version").eq("user_id", u.id).maybeSingle();
+    if (error) { pantalla("login", "No se pudieron cargar tus datos: " + error.message, "error"); user = null; return; }
+    let nuevo = { empresas: [], auditores: [] }, fallos = 0;
+    if (data) {
+      existe = true; version = data.version;
+      const r = await hidratar(data.datos || {}); nuevo = r.db; fallos = r.fallos;
+    }
+    DB = Object.assign({ empresas: [] }, nuevo);
+    migrarDB();
+    $("userMail").textContent = u.email || "";
+    abrirApp(); estado("ok"); renderDash();
+    if (fallos) toast(`No se pudieron descargar ${fallos} archivo(s). Recarga la página para reintentar.`);
+    await ofrecerDatosLocales();
+  }
+  async function ofrecerDatosLocales() {
+    let viejo = null;
+    try { viejo = JSON.parse(localStorage.getItem(LS_KEY) || "null"); } catch (_) { }
+    if (!viejo || !(viejo.empresas?.length || viejo.auditores?.length || viejo.perfil)) return;
+    const n = viejo.empresas?.length || 0;
+    const ok = await preguntar(`Este navegador tiene una copia local de la versión anterior (${n} auditoría(s)). ¿Subirla a tu cuenta? Al terminar se borra de este navegador.`, "Subir a mi cuenta", "Datos guardados en este navegador");
+    if (!ok) { toast("La copia local sigue en este navegador. Puedes subirla la próxima vez que ingreses."); return; }
+    if (!existe && !DB.empresas.length && !(DB.auditores || []).length) {
+      DB = Object.assign({ empresas: [] }, viejo);
+    } else {
+      DB.empresas = DB.empresas || [];
+      (viejo.empresas || []).forEach(x => { const i = DB.empresas.findIndex(y => y.id === x.id); if (i >= 0) DB.empresas[i] = x; else DB.empresas.push(x); });
+      DB.logos = DB.logos || [];
+      (viejo.logos || []).forEach(x => { const i = DB.logos.findIndex(y => y.id === x.id); if (i >= 0) DB.logos[i] = x; else DB.logos.push(x); });
+      DB.auditores = DB.auditores || [];
+      (viejo.auditores || []).forEach(x => { if (!DB.auditores.some(y => y.id === x.id)) DB.auditores.push(x); });
+      if (viejo.perfil) DB.perfil = viejo.perfil;
+    }
+    migrarDB(); renderDash();
+    sucio = true; await sincronizar();
+    if (!sucio && !bloqueado) { localStorage.removeItem(LS_KEY); toast("Datos subidos a tu cuenta y borrados de este navegador"); }
+    else toast("No se pudo subir todo. La copia local se conserva; intenta de nuevo más tarde.");
+  }
+  async function salir(motivo) {
+    if (sucio || enCurso) {
+      await sincronizar();
+      if (sucio && !motivo && !await preguntar("Hay cambios que aún no se guardaron en la nube. Si sales ahora se perderán. Descarga un respaldo si los necesitas.", "Salir de todos modos", "Cambios sin guardar")) return;
+    }
+    if (motivo) sessionStorage.setItem("auditor_motivo_salida", motivo);
+    try { await sb.auth.signOut(); } catch (_) { }
+    DB = { empresas: [] }; user = null;
+    location.replace(location.pathname);
+  }
+
+  // supabase-js fijado a una versión exacta y verificado con SRI (si el CDN lo altera, no se ejecuta)
+  const SUPABASE_JS = { src: "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js",
+    integrity: "sha384-BWcjm9OdFth9TbhCxZPdm+gAOUMAzQy9nmTs12ioXdCcbVnJaPMn+fMUoQCLt60R" };
+  function cargarSupabase() {
+    if (window.supabase && window.supabase.createClient) return Promise.resolve();
+    return new Promise((ok, ko) => {
+      const sc = document.createElement("script");
+      sc.src = SUPABASE_JS.src; sc.integrity = SUPABASE_JS.integrity; sc.crossOrigin = "anonymous";
+      sc.onload = () => ok(); sc.onerror = () => ko(new Error("No se pudo cargar la librería de conexión. Revisa tu internet y recarga."));
+      document.head.appendChild(sc);
+    });
+  }
+
+  async function iniciar() {
+    try { localStorage.removeItem("anthropic_key"); } catch (_) { }   // limpia la clave que guardaba la versión anterior
+    $("accForm").addEventListener("submit", enviarForm);
+    $("accOlvido").onclick = () => pantalla("olvido");
+    $("accVolver").onclick = () => pantalla("login");
+    $("btnSalir").onclick = () => salir();
+    if (!cfgOk()) {
+      pantalla("config", "Falta configurar la conexión: edita CONFIG (SUPABASE_URL y SUPABASE_ANON_KEY) al inicio del archivo.", "error");
+      return;
+    }
+    try { await cargarSupabase(); }
+    catch (err) { pantalla("config", err.message, "error"); return; }
+    const recuperando = /type=recovery/.test(location.hash);
+    sb = supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY, {
+      auth: { storage: CONFIG.RECORDAR_SESION ? window.localStorage : window.sessionStorage,
+        persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+    });
+    sb.auth.onAuthStateChange(ev => {
+      if (ev === "PASSWORD_RECOVERY") pantalla("nueva");
+      if (ev === "SIGNED_OUT" && user) { user = null; location.replace(location.pathname); }
+    });
+    const { data: { session } } = await sb.auth.getSession();
+    const motivo = sessionStorage.getItem("auditor_motivo_salida"); sessionStorage.removeItem("auditor_motivo_salida");
+    if (recuperando && session) pantalla("nueva");
+    else if (session) await entrar(session.user);
+    else pantalla("login", motivo || "", motivo ? "ok" : "");
+
+    window.addEventListener("beforeunload", e => { if (sucio || enCurso) { e.preventDefault(); e.returnValue = ""; } });
+    ["pointerdown", "keydown", "wheel", "touchstart"].forEach(t => window.addEventListener(t, () => { ultimaAct = Date.now(); }, { passive: true }));
+    if (CONFIG.INACTIVIDAD_MIN > 0) setInterval(() => {
+      if (user && Date.now() - ultimaAct > CONFIG.INACTIVIDAD_MIN * 60000) salir("Cerramos tu sesión por inactividad.");
+    }, 30000);
+  }
+
+  return { iniciar, marcar };
+})();
+
+</script>
 <script>
 /* =====================================================================
    CATÁLOGO · HERRAMIENTA TÉCNICA DE AUDITORÍA DEL SG-SST
@@ -952,7 +1286,7 @@ function reqProgress(it, r){
 }
 
 /* =====================================================================
-   ESTADO / PERSISTENCIA  (local en el navegador; a futuro Supabase)
+   ESTADO / PERSISTENCIA  (en memoria; se guarda en Supabase a través de NUBE)
    Estructura pensada para migrar:
      empresas (auditorías)  -> tabla auditorias
      ratings[codigo]        -> tabla auditoria_items (auditoria_id, codigo, na, na_just, obs, crit, rec, ia)
@@ -961,9 +1295,9 @@ function reqProgress(it, r){
      STANDARDS              -> tablas catalogo_items / catalogo_requisitos (seed)
    ===================================================================== */
 const LS_KEY = "auditor_sgsst_v2";
-let DB = load();
-function load(){ try{return JSON.parse(localStorage.getItem(LS_KEY))||{empresas:[]}}catch(e){return{empresas:[]}} }
-(function migrar(){
+// LS_KEY solo se usa para detectar y subir la copia local de versiones anteriores.
+let DB = {empresas:[]};
+function migrarDB(){
   DB.auditores=DB.auditores||[];
   if(DB.perfil){   // formato anterior: un único perfil -> lista de auditores
     if(Object.keys(DB.perfil).some(k=>k!=="docs"&&DB.perfil[k]) || Object.keys(DB.perfil.docs||{}).length) DB.auditores.push(Object.assign({id:uid(),docs:{}},DB.perfil));
@@ -974,11 +1308,10 @@ function load(){ try{return JSON.parse(localStorage.getItem(LS_KEY))||{empresas:
     if(r.req) for(const k in r.req) if(r.req[k]==="om") r.req[k]="c";   // formato anterior: el criterio ya no tiene "O.M."
     if(r.na){ r.v="na"; delete r.na; }                                   // formato anterior: "No aplica" era una casilla aparte
   }));
-})();
-function save(){
-  try{ localStorage.setItem(LS_KEY, JSON.stringify(DB)); return true; }
-  catch(e){ toast("⚠ No se pudo guardar: el almacenamiento del navegador está lleno (archivos muy pesados). Descarga un respaldo."); return false; }
 }
+migrarDB();
+// Guarda en la nube (con espera corta para agrupar cambios). Ver NUBE.
+function save(){ NUBE.marcar(); return true; }
 // Confirmación en pantalla: devuelve una promesa (true = aceptar). Reemplaza a window.confirm.
 function preguntar(msg,okTxt,titulo){
   return new Promise(res=>{
@@ -1194,7 +1527,7 @@ document.getElementById("btnAddEnt").onclick=function(){
 function perfilSnap(a){ return {nombre:a.nombre||"",doc:a.doc||"",prof:a.prof||"",cursoHoras:a.cursoHoras||"",licencia:!!a.docs?.licencia,curso:!!a.docs?.curso,audCurso:!!a.docs?.auditor,firma:a.firma||""}; }
 /* ---------------------------------------------------------------------
    REGISTRO DE AUDITORES DE LA APP (capa de acceso a datos)
-   Hoy lee el almacenamiento local del navegador. Cuando exista acceso por usuarios,
+   Hoy lee el estado del usuario con sesión (Supabase). Para compartir auditores entre usuarios,
    solo hay que reemplazar estas funciones por consultas al servidor:
      auditores()  -> todos los auditores registrados en la app
      usuarioId()  -> perfil de auditor del usuario con sesión (un usuario = un perfil)
@@ -1471,9 +1804,8 @@ function itemHtml(it, e){
       <input class="docs-in" placeholder="Documentos revisados (nombre, versión, fecha)" value="${esc(r.docs||'')}" oninput="setField('${it.c}','docs',this.value)">
     </div>
     <div class="draft-row no-print">
-      <button class="btn gold sm" id="ia-btn-${it.c}" onclick="analyzeIA('${it.c}')">✨ Analizar con IA</button>
-      ${(v==='no'||v==='mejora')?`<button class="btn sec sm" onclick="draftHallazgo('${it.c}')">📝 Redactar hallazgo (plantilla)</button>`:''}
-      <span class="hint">Genera o complementa el hallazgo con la lista de chequeo y lo que ya escribiste.</span>
+      <button class="btn gold sm" id="ia-btn-${it.c}" onclick="analyzeIA('${it.c}')">📝 Redactar borrador</button>
+      <span class="hint">Arma el hallazgo con la lista de chequeo y lo que ya escribiste. Revísalo antes de aplicarlo.</span>
     </div>
     <div class="ia-box ${r.iaProp?'show':''}" id="iabox-${it.c}">${r.iaProp? iaPropHtml(it.c,r.iaProp):''}</div>
     <textarea id="obs-${it.c}" placeholder="Hallazgo / observación del auditor..." oninput="setField('${it.c}','obs',this.value)">${esc(r.obs||'')}</textarea>
@@ -1601,82 +1933,6 @@ window.cierreConfirmar=function(){
   document.getElementById("cierreBg").classList.remove("open");
   dashTab="fin"; renderAudit(); toast("Auditoría cerrada: ahora está en «Auditorías finalizadas»");
 };
-// Fortalezas con IA: solo con lo registrado en la auditoría
-window.fortalezasIA=async function(){
-  const e=curEmp(), btn=document.getElementById("cierreIA");
-  if(!getKey()){ toast("Configura tu clave de Anthropic en el panel para usar la IA"); return; }
-  const items=itemsForSet(e.set), s=computeScore(e);
-  const conformes=items.filter(it=>e.ratings[it.c]?.v==='cumple');
-  const nCumpleReq=items.reduce((a,it)=>a+it.reqs.filter((_,i)=>e.ratings[it.c]?.req?.[i]==='c').length,0);
-  if(!conformes.length && !s.reqC){ toast("Aún no hay ítems conformes ni requisitos que cumplen para destacar"); return; }
-  const lineas=conformes.slice(0,40).map(it=>`- ${it.c} ${it.d} (${it.est}, ciclo ${it.ciclo})${e.ratings[it.c]?.obs?': '+e.ratings[it.c].obs.slice(0,220):''}`).join("\n");
-  const ciclos=s.porCiclo.map(c=>`${c.ciclo}: ${c.pct.toFixed(1)}% (${c.obt.toFixed(2)} de ${c.max.toFixed(2)})`).join("; ");
-  const estandares=s.porEstandar.map(g=>`${g.key.replace(/^[PHVA] - /,'')}: ${g.pct.toFixed(1)}%`).join("; ");
-  const prompt=`Eres auditor del SG-SST en Colombia (Decreto 1072 de 2015, Resolución 0312 de 2019). Redacta el apartado «Fortalezas» del informe de auditoría de ${e.razon}.
-Datos de la auditoría (única información que puedes usar):
-- Puntaje global: ${s.pct.toFixed(1)}% (${s.obtenido.toFixed(2)} de ${s.maxPosible.toFixed(2)}). Estándares aplicables: ${e.set}.
-- Por ciclo: ${ciclos}
-- Por estándar: ${estandares}
-- Ítems: ${s.nCumple} conformes, ${s.nMej} conformes con oportunidad de mejora, ${s.nNo} no conformes, ${s.nNa} no aplican, ${s.nPend} pendientes.
-- Requisitos verificables: ${s.reqC} cumplen, ${s.reqNC} no cumplen, ${s.reqNA} no aplican.
-Ítems conformes${conformes.length>40?' (primeros 40)':''}:
-${lineas||'(ninguno)'}
-Reglas: no inventes hechos, cifras, documentos ni normas; usa solo estos datos. Destaca solo lo que sustenta un resultado favorable, agrupado por temas o ciclos, sin contradecir los hallazgos (no menciones como fortaleza algo con no conformidad). Redacta en tercera persona, tiempo presente, tono objetivo y claro, en uno o dos párrafos cortos o una lista breve. Máximo 150 palabras.
-Responde SOLO con JSON válido, sin markdown: {"fortalezas":"..."}`;
-  btn.innerHTML='<span class="spin"></span> Redactando...'; btn.disabled=true;
-  try{
-    const resp=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",
-      headers:{"Content-Type":"application/json","anthropic-dangerous-direct-browser-access":"true","x-api-key":getKey(),"anthropic-version":"2023-06-01"},
-      body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:800,messages:[{role:"user",content:prompt}]})});
-    const data=await resp.json(); if(data.error) throw new Error(data.error.message||"Error de API");
-    const txt=(data.content||[]).filter(x=>x.type==="text").map(x=>x.text).join("").replace(/```json|```/g,"").trim();
-    let o; try{ o=JSON.parse(txt); }catch(_){ o={fortalezas:txt}; }
-    if(!o.fortalezas) throw new Error("La respuesta no trae texto");
-    const t=document.getElementById("cierreFort");
-    if(t.value.trim() && !await preguntar("Ya hay texto en fortalezas. ¿Reemplazarlo por la propuesta de la IA?","Reemplazar")) return;
-    t.value=o.fortalezas; toast("Borrador listo. Revísalo antes de cerrar.");
-  }catch(err){ toast("No se pudo redactar: "+err.message); }
-  finally{ btn.innerHTML="✨ Redactar con IA"; btn.disabled=false; }
-};
-
-// Debilidades con IA: solo con lo registrado en la auditoría
-window.debilidadesIA=async function(){
-  const e=curEmp(), btn=document.getElementById("cierreDebIA");
-  if(!getKey()){ toast("Configura tu clave de Anthropic en el panel para usar la IA"); return; }
-  const items=itemsForSet(e.set), s=computeScore(e);
-  const nc=items.filter(it=>e.ratings[it.c]?.v==='no'), om=items.filter(it=>e.ratings[it.c]?.v==='mejora');
-  if(!nc.length && !om.length){ toast("No hay no conformidades ni oportunidades de mejora para describir"); return; }
-  const lin=(it,v)=>{ const r=e.ratings[it.c]||{}; const rq=it.reqs.filter((_,i)=>r.req?.[i]===v).slice(0,4).join("; "); return `- ${it.c} ${it.d} (${it.est}, ciclo ${it.ciclo})${r.obs?': '+r.obs.slice(0,220):''}${rq?' | Requisitos no cumplidos: '+rq.slice(0,260):''}`; };
-  const ciclos=s.porCiclo.map(c=>`${c.ciclo}: ${c.pct.toFixed(1)}%`).join("; ");
-  const estandares=s.porEstandar.map(g=>`${g.key.replace(/^[PHVA] - /,'')}: ${g.pct.toFixed(1)}%`).join("; ");
-  const prompt=`Eres auditor del SG-SST en Colombia (Decreto 1072 de 2015, Resolución 0312 de 2019). Redacta el apartado «Debilidades» del informe de auditoría de ${e.razon}.
-Datos de la auditoría (única información que puedes usar):
-- Puntaje global: ${s.pct.toFixed(1)}%. Estándares aplicables: ${e.set}.
-- Por ciclo: ${ciclos}
-- Por estándar: ${estandares}
-- Ítems: ${s.nCumple} conformes, ${s.nMej} con oportunidad de mejora, ${s.nNo} no conformes, ${s.nNa} no aplican.
-No conformidades${nc.length>30?' (primeras 30)':''}:
-${nc.slice(0,30).map(it=>lin(it,'nc')).join("\n")||'(ninguna)'}
-Oportunidades de mejora${om.length>20?' (primeras 20)':''}:
-${om.slice(0,20).map(it=>lin(it,'nc')).join("\n")||'(ninguna)'}
-Reglas: no inventes hechos, cifras, documentos ni normas; usa solo estos datos. Agrupa por temas o ciclos, sin duplicar el detalle de cada hallazgo y sin proponer acciones (esas van en el plan de acción). Redacta en tercera persona, tiempo presente, tono objetivo y claro, en un solo párrafo o dos de máximo 6 frases cada uno.
-Responde SOLO con JSON válido, sin markdown: {"debilidades":"..."}`;
-  btn.innerHTML='<span class="spin"></span> Redactando...'; btn.disabled=true;
-  try{
-    const resp=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",
-      headers:{"Content-Type":"application/json","anthropic-dangerous-direct-browser-access":"true","x-api-key":getKey(),"anthropic-version":"2023-06-01"},
-      body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:900,messages:[{role:"user",content:prompt}]})});
-    const data=await resp.json(); if(data.error) throw new Error(data.error.message||"Error de API");
-    const txt=(data.content||[]).filter(x=>x.type==="text").map(x=>x.text).join("").replace(/```json|```/g,"").trim();
-    let o; try{ o=JSON.parse(txt); }catch(_){ o={debilidades:txt}; }
-    if(!o.debilidades) throw new Error("La respuesta no trae texto");
-    const t=document.getElementById("cierreDeb");
-    if(t.value.trim() && !await preguntar("Ya hay texto en debilidades. ¿Reemplazarlo por la propuesta de la IA?","Reemplazar")) return;
-    t.value=o.debilidades; toast("Borrador listo. Revísalo antes de cerrar.");
-  }catch(err){ toast("No se pudo redactar: "+err.message); }
-  finally{ btn.innerHTML="✨ Redactar con IA"; btn.disabled=false; }
-};
-
 window.nextPend=function(){
   const e=curEmp();
   if(audFilter!=='all'||audSearch){ audFilter='all'; audSearch=''; audPage=0; renderAudit(); }
@@ -1697,18 +1953,98 @@ window.nextPend=function(){
   t.classList.remove('flash'); void t.offsetWidth; t.classList.add('flash');
 };
 function lc(t){ t=(t||'').trim().replace(/\.$/,''); return t.charAt(0).toLowerCase()+t.slice(1); }
-window.draftHallazgo=async function(c){
+/* =====================================================================
+   REDACCIÓN AUTOMÁTICA (sin IA, sin conexión a servicios externos)
+   Arma borradores con lo registrado en la auditoría: lista de chequeo,
+   resultado del ítem, métodos, documentos y la nota del auditor.
+   No inventa datos: solo reorganiza lo que ya está calificado.
+   ===================================================================== */
+const cap=t=>t?t.charAt(0).toUpperCase()+t.slice(1):t;
+const listaY=a=>a.length<2?a.join(''):a.slice(0,-1).join(', ')+' y '+a[a.length-1];
+const pctTxt=n=>n.toLocaleString('es-CO',{maximumFractionDigits:1})+' %';
+const nombreEst=g=>g.key.replace(/^[PHVA] - /,'').toLowerCase();
+const matchEst=key=>(ESTANDAR_GROUPS.find(x=>x.key===key)||{}).match;
+const plural=(n,s,p)=>n===1?`${n} ${s}`:`${n} ${p}`;
+
+function borradorHallazgo(it,r){
+  const est=i=>r.req?.[i];
+  const C=it.reqs.filter((_,i)=>est(i)==='c'), NC=it.reqs.filter((_,i)=>est(i)==='nc');
+  const NA=it.reqs.filter((_,i)=>est(i)==='na'), SC=it.reqs.filter((_,i)=>!est(i));
+  const aplic=C.length+NC.length;
+  const norma=it.norma?`${it.norma.split(';')[0].trim()}${it.norma.includes(';')?' y demás normas aplicables':''}`:'la Resolución 0312 de 2019';
+  const met=METODOS.filter(m=>r.met?.[m.k]).map(m=>m.l.toLowerCase());
+  const intro=met.length?`mediante ${listaY(met)}${r.docs?`, con base en ${r.docs}`:''}, `:(r.docs?`con base en ${r.docs}, `:'');
+  const v=r.v||(NC.length?'no':null);
+  const f=[];
+  if(NC.length){
+    f.push(cap(`${intro}no se evidenció el cumplimiento de: ${NC.map(lc).join('; ')}.`));
+    if(C.length) f.push(`Se verificó el cumplimiento de ${C.length} de ${aplic} requisitos aplicables del ítem.`);
+  }else if(C.length){
+    const todos=!SC.length;
+    f.push(cap(`${intro}se verificó el cumplimiento de ${todos?'la totalidad de los requisitos aplicables':`${C.length} requisito(s)`} del ítem ${it.c} (${lc(it.d)}).`));
+  }
+  if(v==='mejora') f.push('Aunque el ítem es conforme, se identificaron oportunidades de mejora en su implementación.');
+  if(NA.length) f.push(NA.length===1?'Un requisito no aplica para la empresa.':`${NA.length} requisitos no aplican para la empresa.`);
+  if(SC.length) f.push(SC.length<=3?`Quedan por verificar: ${SC.map(lc).join('; ')}.`:`Quedan ${SC.length} requisitos de la lista de chequeo por verificar.`);
+  if(v==='no') f.push(`Lo anterior no se ajusta a lo establecido en ${norma}.`);
+  let hallazgo=f.join(' ');
+  const prelim=(r.obs||'').trim();
+  if(prelim && !(f[0] && prelim.includes(f[0]))) hallazgo=prelim+(/[.!?]$/.test(prelim)?'':'.')+(hallazgo?' '+hallazgo:'');
+  let recomendacion='';
+  if(v==='no'||NC.length) recomendacion=`Definir e implementar acciones correctivas para ${NC.length?'asegurar '+NC.slice(0,3).map(lc).join('; '):(it.crit?lc(it.crit):'dar cumplimiento al ítem '+it.c)}, conforme a la normatividad aplicable al ítem, y conservar la evidencia documental.`;
+  else if(v==='mejora') recomendacion=`Implementar acciones de mejora orientadas a ${it.crit?lc(it.crit):'fortalecer el ítem '+it.c}, conservando la evidencia documental.`;
+  return {hallazgo,recomendacion};
+}
+
+function borradorFortalezas(e){
+  const items=itemsForSet(e.set), s=computeScore(e);
+  const conformes=items.filter(it=>e.ratings[it.c]?.v==='cumple');
+  if(!conformes.length && !s.reqC) return '';
+  const estConNC=new Set(items.filter(it=>e.ratings[it.c]?.v==='no').map(it=>it.est));
+  const fuertes=s.porEstandar.filter(g=>g.pct>=80 && !estConNC.has(matchEst(g.key))).sort((a,b)=>b.pct-a.pct);
+  const ciclos=s.porCiclo.filter(c=>c.pct>=80).sort((a,b)=>b.pct-a.pct);
+  const p=[`${e.razon} alcanza un cumplimiento global de ${pctTxt(s.pct)} frente a los ${e.set} estándares mínimos aplicables, con ${plural(s.nCumple,'ítem conforme','ítems conformes')}${s.reqC?` y ${plural(s.reqC,'requisito verificable que cumple','requisitos verificables que cumplen')}`:''}.`];
+  if(ciclos.length) p.push(`Los mejores resultados por ciclo se presentan en ${listaY(ciclos.map(c=>`${c.ciclo} (${pctTxt(c.pct)})`))}.`);
+  if(fuertes.length) p.push(`Se destacan los estándares de ${listaY(fuertes.slice(0,4).map(g=>`${nombreEst(g)} (${pctTxt(g.pct)})`))}, sin no conformidades en ${fuertes.length===1?'ese estándar':'esos estándares'}.`);
+  const ej=conformes.filter(it=>fuertes.some(g=>matchEst(g.key)===it.est)).slice(0,4);
+  if(ej.length) p.push(`Entre los aspectos verificados como conformes están: ${ej.map(it=>lc(it.d)).join('; ')}.`);
+  return p.join(' ');
+}
+
+function borradorDebilidades(e){
+  const items=itemsForSet(e.set), s=computeScore(e);
+  const nc=items.filter(it=>e.ratings[it.c]?.v==='no'), om=items.filter(it=>e.ratings[it.c]?.v==='mejora');
+  if(!nc.length && !om.length) return '';
+  const grupos=ESTANDAR_GROUPS.map(g=>({g,n:nc.filter(it=>it.est===g.match).length+om.filter(it=>it.est===g.match).length})).filter(x=>x.n).sort((a,b)=>b.n-a.n);
+  const bajos=s.porEstandar.filter(g=>g.pct<60).sort((a,b)=>a.pct-b.pct);
+  const p=[`Se identificaron ${plural(nc.length,'no conformidad','no conformidades')}${om.length?` y ${plural(om.length,'oportunidad de mejora','oportunidades de mejora')}`:''}, concentradas principalmente en ${listaY(grupos.slice(0,3).map(x=>nombreEst(x.g)))}.`];
+  if(bajos.length) p.push(`Los resultados más bajos se registran en ${listaY(bajos.slice(0,3).map(g=>`${nombreEst(g)} (${pctTxt(g.pct)})`))}.`);
+  if(nc.length) p.push(`Las no conformidades se relacionan con: ${nc.slice(0,6).map(it=>lc(it.d)).join('; ')}${nc.length>6?', entre otras':''}.`);
+  if(om.length) p.push(`Las oportunidades de mejora se refieren a: ${om.slice(0,4).map(it=>lc(it.d)).join('; ')}${om.length>4?', entre otras':''}.`);
+  return p.join(' ');
+}
+
+window.fortalezasIA=async function(){
+  const e=curEmp(), txt=borradorFortalezas(e);
+  if(!txt){ toast("Aún no hay ítems conformes ni requisitos que cumplen para destacar"); return; }
+  const t=document.getElementById("cierreFort");
+  if(t.value.trim() && !await preguntar("Ya hay texto en fortalezas. ¿Reemplazarlo por el borrador?","Reemplazar")) return;
+  t.value=txt; toast("Borrador listo. Revísalo antes de cerrar.");
+};
+window.debilidadesIA=async function(){
+  const e=curEmp(), txt=borradorDebilidades(e);
+  if(!txt){ toast("No hay no conformidades ni oportunidades de mejora para describir"); return; }
+  const t=document.getElementById("cierreDeb");
+  if(t.value.trim() && !await preguntar("Ya hay texto en debilidades. ¿Reemplazarlo por el borrador?","Reemplazar")) return;
+  t.value=txt; toast("Borrador listo. Revísalo antes de cerrar.");
+};
+window.analyzeIA=function(c){
   const it=stdByCode(c), r=R(c);
-  const nc=it.reqs.filter((_,i)=>r.req?.[i]==='nc'), mej=r.v==='mejora';
-  const metTxt=METODOS.filter(m=>r.met?.[m.k]).map(m=>m.l.toLowerCase());
-  let h='';
-  if(metTxt.length) h+=`Mediante ${metTxt.join(', ').replace(/, ([^,]*)$/,' y $1')}${r.docs?' de '+r.docs:''}, `;
-  else if(r.docs) h+=`En la revisión de ${r.docs}, `;
-  if(nc.length) h+=(h?'no se evidenció':'No se evidenció')+` el cumplimiento de: ${nc.map(lc).join('; ')}.`;
-  if(mej) h+=nc.length?' Adicionalmente, se identificaron oportunidades de mejora en la implementación del ítem.':(h?'se evidencia cumplimiento del requisito; sin embargo, se identifican oportunidades de mejora.':'Se evidencia cumplimiento del requisito; sin embargo, se identifican oportunidades de mejora.');
-  const rec=`${(nc.length||r.v==='no')?'Definir e implementar acciones correctivas':'Implementar acciones de mejora'} orientadas a ${it.crit?lc(it.crit):'dar cumplimiento al ítem '+it.c}, conservando la evidencia documental correspondiente.`;
-  if(r.obs && !await preguntar("El hallazgo ya tiene texto. ¿Reemplazarlo por la plantilla?","Reemplazar")) return;
-  r.obs=h; if(!r.rec) r.rec=rec; save(); refreshItem(c); toast("Hallazgo redactado. Ajústalo con lo observado en campo.");
+  const calificados=it.reqs.filter((_,i)=>r.req?.[i]).length;
+  if(!calificados && !(r.obs||'').trim()){ toast("Califica la lista de chequeo o escribe primero una nota preliminar del hallazgo"); return; }
+  const p=borradorHallazgo(it,r);
+  if(!p.hallazgo){ toast("No hay suficiente información calificada para redactar el borrador"); return; }
+  r.iaProp=p; save(); refreshItem(c);
 };
 window.addEvidence=function(c,input){
   const r=R(c); r.ev=r.ev||[];
@@ -1722,14 +2058,9 @@ window.addEvidence=function(c,input){
 };
 window.delEvidence=function(c,ix){ R(c).ev.splice(ix,1); save(); refreshItem(c); };
 
-/* =====================================================================
-   ANÁLISIS IA DEL HALLAZGO  (Anthropic API · requiere clave en local)
-   Genera o complementa el hallazgo/observación a partir de la lista de
-   chequeo calificada y del texto preliminar que escribió el auditor.
-   ===================================================================== */
-function getKey(){ return localStorage.getItem("anthropic_key")||""; }
+/* Borrador del hallazgo: vista previa con «Aplicar» / «Descartar» */
 function iaPropHtml(c,p){
-  return `<div class="ia-h">✨ Propuesta del asistente <span style="font-weight:400;color:var(--muted)">(borrador — revísalo antes de aplicar)</span></div>
+  return `<div class="ia-h">📝 Borrador del hallazgo <span style="font-weight:400;color:var(--muted)">(revísalo antes de aplicar)</span></div>
     <div class="ia-sec"><b>Hallazgo / observación:</b>\n${esc(p.hallazgo||'')}</div>
     ${p.recomendacion?`<div class="ia-sec"><b>Recomendación:</b> ${esc(p.recomendacion)}</div>`:''}
     <div class="ia-acts no-print"><button class="btn sm" onclick="applyProp('${c}')">Aplicar al hallazgo</button><button class="btn sec sm" onclick="discardProp('${c}')">Descartar</button></div>
@@ -1744,49 +2075,6 @@ window.applyProp=function(c){
   delete r.iaProp; save(); refreshItem(c); toast("Hallazgo actualizado. Ajústalo con lo observado en campo.");
 };
 window.discardProp=function(c){ delete R(c).iaProp; save(); refreshItem(c); };
-window.analyzeIA=async function(c){
-  const e=curEmp(), it=stdByCode(c), r=R(c);
-  const prelim=(r.obs||"").trim();
-  const calificados=it.reqs.filter((_,i)=>r.req?.[i]).length;
-  if(!calificados && !prelim){ toast("Califica la lista de chequeo o escribe primero una nota preliminar del hallazgo"); return; }
-  if(!getKey()){ toast("Configura tu clave de Anthropic en el panel para usar la IA"); return; }
-  const btn=document.getElementById("ia-btn-"+c);
-  btn.innerHTML='<span class="spin"></span> Analizando...'; btn.disabled=true;
-  const lst=it.reqs.map((x,i)=>`${i+1}. [${REQ_LABEL[r.req?.[i]]||'Sin calificar'}] ${x}`).join("\n");
-  const modo=prelim?"COMPLEMENTAR":"GENERAR";
-  const prompt=`Eres auditor del SG-SST en Colombia (Decreto 1072 de 2015, Resolución 0312 de 2019). Tu tarea es ${modo==="GENERAR"?"GENERAR":"COMPLEMENTAR y mejorar la redacción de"} el hallazgo u observación del auditor para el ítem indicado.
-Empresa: ${e.razon} · Riesgo ${e.riesgo} · ${e.set} estándares aplicables.
-Ítem ${it.c}: ${it.d}
-Criterio: ${it.crit||'—'}
-Normatividad aplicable (única que puedes mencionar): ${it.norma||'Resolución 0312 de 2019'}
-Evidencia esperada: ${it.evid||'—'}
-Lista de chequeo calificada por el auditor:
-${lst}
-Resultado del ítem marcado por el auditor: ${r.v?ITEM_LABEL[r.v]:'aún no definido'}
-Métodos usados: ${METODOS.filter(m=>r.met?.[m.k]).map(m=>m.l).join(', ')||'no indicado'}
-Documentos revisados: ${r.docs||'no indicado'}
-Nota preliminar del auditor: ${prelim||'(sin nota)'}
-
-Reglas:
-- Usa SOLO la información anterior. No inventes hechos, cifras, fechas, nombres, documentos ni citas normativas; si algo no está calificado o no consta, dilo como aspecto por verificar.
-- Los requisitos "No aplica" no se evalúan; no los menciones como incumplimiento.
-${prelim?"- Conserva el sentido y los hechos de la nota del auditor; mejora la redacción y agrega lo que se desprenda de la lista de chequeo sin contradecirlo.\n":""}- Redacta en tercera persona, tiempo pasado, de forma objetiva y verificable, con lenguaje claro y profesional.
-- Si hay requisitos "No cumple" o el resultado es No conforme / Conforme con oportunidad de mejora: hallazgo de máx. 5 frases, con recomendación y acción concreta.
-- Si todo cumple: observación breve de máx. 3 frases; deja "recomendacion" y "accion" vacías.
-Responde SOLO con JSON válido, sin markdown: {"hallazgo":"...","recomendacion":"máx 2 frases o vacío","accion":"máx 2 frases o vacío"}`;
-  try{
-    const resp=await fetch("https://api.anthropic.com/v1/messages",{method:"POST",
-      headers:{"Content-Type":"application/json","anthropic-dangerous-direct-browser-access":"true","x-api-key":getKey(),"anthropic-version":"2023-06-01"},
-      body:JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1000,messages:[{role:"user",content:prompt}]})});
-    const data=await resp.json(); if(data.error) throw new Error(data.error.message||"Error de API");
-    const txt=(data.content||[]).filter(x=>x.type==="text").map(x=>x.text).join("").replace(/```json|```/g,"").trim();
-    let o; try{ o=JSON.parse(txt); }catch(_){ o={hallazgo:txt}; }
-    if(!o.hallazgo) throw new Error("La respuesta no trae un hallazgo");
-    r.iaProp={hallazgo:o.hallazgo,recomendacion:o.recomendacion||"",accion:o.accion||""};
-    save(); refreshItem(c);
-  }catch(err){ btn.innerHTML="✨ Analizar con IA"; btn.disabled=false; toast("No se pudo analizar: "+err.message); }
-};
-
 const ncDe=e=>itemsForSet(e.set).filter(it=>e.ratings?.[it.c]?.v==='no');
 // criterio de la norma para un ítem (el escrito por el auditor o el predeterminado)
 function critTxt(e,it){ return e.ratings[it.c]?.crit || [it.norma?it.norma+'.':`Resolución 0312 de 2019, ítem ${it.c}.`, it.crit||it.d].join(' '); }
@@ -2743,10 +3031,6 @@ document.getElementById("fImport").onchange=function(){
   };
   rd.readAsText(f); this.value="";
 };
-// clave IA
-document.getElementById("btnKey").onclick=()=>{document.getElementById("fKey").value=getKey();document.getElementById("keyBg").classList.add("open");};
-document.getElementById("kCancel").onclick=()=>document.getElementById("keyBg").classList.remove("open");
-document.getElementById("kSave").onclick=()=>{localStorage.setItem("anthropic_key",document.getElementById("fKey").value.trim());document.getElementById("keyBg").classList.remove("open");toast("Clave guardada en este navegador");};
 
 /* =====================================================================
    PERFILES DE AUDITORES
@@ -2931,8 +3215,9 @@ function esc(s){return (s==null?'':String(s)).replace(/[&<>"']/g,m=>({'&':'&amp;
 let toastT;
 function toast(msg){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("show"),2600);}
 
-// init
-renderDash();
+// init: la app arranca cuando hay sesión (NUBE.iniciar)
+document.getElementById("accLogo").src=document.querySelector("header.top .logo img").src;
 </script>
+<script>NUBE.iniciar();</script>
 </body>
 </html>
