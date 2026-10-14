@@ -289,6 +289,7 @@
   .cal-chip{display:block;font-size:11px;line-height:1.25;padding:2px 5px;border-radius:4px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .cal-chip.g{background:rgba(5,222,194,.25);color:#06293a}
   .cal-chip.a{background:rgba(29,113,184,.18);color:#0f4d82}
+  .cal-chip.x{background:color-mix(in srgb,var(--c) 14%,#fff);color:var(--c);border-left:3px solid var(--c)}
   .cal-more{font-size:11px;color:var(--muted);margin-top:2px}
   @media(max-width:700px){.cal-cell{min-height:64px}.cal-chip{font-size:10px}}
   .ev-modal{max-width:min(94vw,1100px);width:94vw;height:88vh;display:flex;flex-direction:column;padding:14px}
@@ -580,7 +581,7 @@
     <button class="btn sec sm no-print" id="calBack" style="margin-bottom:14px">← Volver al panel</button>
     <div class="dash-head"><div>
       <h2 style="font-size:24px">Calendario</h2>
-      <p>Muestra los eventos de tu Google Calendar (los que crees allí como auditorías) junto con las auditorías registradas en esta app. La conexión se configura en «Perfil del auditor».</p>
+      <p>Muestra tus auditorías, las del resto del equipo (solo fecha, cliente, auditor y estado; las reservadas aparecen sin cliente) y, si lo conectas, tu Google Calendar. La conexión se configura en «Perfil del auditor».</p>
     </div></div>
     <div class="cal-bar no-print">
       <button class="btn sec sm" id="calPrev">← Mes anterior</button>
@@ -590,7 +591,7 @@
       <label class="cal-year">Año <select id="calYear"></select></label>
     </div>
     <div class="cal-status no-print" id="calStatus"></div>
-    <div class="cal-legend"><span><i style="background:var(--brand)"></i>Google Calendar</span><span><i style="background:var(--brand-2)"></i>Auditorías de la app</span></div>
+    <div class="cal-legend"><span><i style="background:var(--brand)"></i>Google Calendar</span><span><i style="background:var(--brand-2)"></i>Tus auditorías</span><span><i style="background:linear-gradient(90deg,#7c3aed,#c2410c,#0f766e)"></i>Auditorías del equipo (color por auditor)</span></div>
     <div class="cal-grid" id="calGrid"></div>
     <div class="perf-card" id="calDia" style="margin-top:14px;display:none"></div>
   </section>
@@ -768,6 +769,10 @@
       <div class="field"><label>Reunión de apertura</label><input id="fApert" type="datetime-local"></div>
       <div class="field"><label>Reunión de cierre</label><input id="fCierre" type="datetime-local"></div>
     </div>
+    <label style="display:flex;gap:8px;align-items:flex-start;font-size:13px;margin:4px 0 12px;cursor:pointer">
+      <input type="checkbox" id="fReserv" style="margin-top:3px">
+      <span><b>Visita reservada.</b> En la agenda del equipo se verá la fecha y el auditor, pero no el nombre del cliente ni el municipio.</span>
+    </label>
     <div class="field"><label>Responsable(s) del SG-SST y personas entrevistadas</label>
       <div id="fEntHost"></div>
       <button class="btn sec sm" id="btnAddEnt" type="button">+ Agregar persona</button>
@@ -978,6 +983,54 @@ const NUBE = (() => {
     return { db: recorrer(datos, s => mapa.get(s) || s), fallos };
   }
 
+  /* ---------- agenda compartida (solo fecha, cliente, auditores, municipio, estado) ---------- */
+  let agendaPrev = null, agendaEnCurso = null, agendaOtraVez = false;
+  function nombresAud(e) {
+    const lista = DB.auditores || [], snap = e.audSnap || {};
+    const n = (e.audIds || []).map(id => (lista.find(a => a.id === id) || snap[id] || {}).nombre).filter(Boolean);
+    if (!n.length) [e.aud1, e.aud2].forEach(x => { if (x) n.push(x); });
+    return n.join(", ");
+  }
+  const filaAgenda = r => ({
+    empresa_id: String(r.empresa_id).slice(0, 80), fecha: r.fecha,
+    cliente: String(r.cliente || "Auditoría").slice(0, 200), auditores: String(r.auditores || "").slice(0, 300),
+    municipio: String(r.municipio || "").slice(0, 120), estado: r.estado === "cerrada" ? "cerrada" : "curso",
+    reservada: !!r.reservada
+  });
+  const filasLocales = () => (DB.empresas || [])
+    .filter(e => /^\d{4}-\d{2}-\d{2}$/.test(e.fecha || ""))
+    .map(e => filaAgenda({ empresa_id: e.id, fecha: e.fecha, cliente: e.razon, auditores: nombresAud(e),
+      municipio: e.muni, estado: e.estado, reservada: e.reservada }));
+  function sincronizarAgenda() {
+    if (!user) return;
+    if (agendaEnCurso) { agendaOtraVez = true; return; }
+    agendaEnCurso = (async () => {
+      do {
+        agendaOtraVez = false;
+        try {
+          if (!agendaPrev) {
+            const { data, error } = await sb.from("agenda")
+              .select("empresa_id,fecha,cliente,auditores,municipio,estado,reservada").eq("owner", user.id);
+            if (error) throw error;
+            agendaPrev = new Map(data.map(r => [r.empresa_id, JSON.stringify(filaAgenda(r))]));
+          }
+          const filas = filasLocales(), nuevos = new Map(filas.map(r => [r.empresa_id, JSON.stringify(r)]));
+          const cambiar = filas.filter(r => agendaPrev.get(r.empresa_id) !== nuevos.get(r.empresa_id)).map(r => ({ ...r, owner: user.id }));
+          const borrar = [...agendaPrev.keys()].filter(k => !nuevos.has(k));
+          if (cambiar.length) { const { error } = await sb.from("agenda").upsert(cambiar, { onConflict: "owner,empresa_id" }); if (error) throw error; }
+          if (borrar.length) { const { error } = await sb.from("agenda").delete().eq("owner", user.id).in("empresa_id", borrar); if (error) throw error; }
+          agendaPrev = nuevos;
+        } catch (err) { console.error("Agenda compartida:", err); agendaPrev = null; }
+      } while (agendaOtraVez);
+    })().finally(() => { agendaEnCurso = null; });
+  }
+  async function agendaEquipo(desde, hasta) {
+    if (!sb || !user) return null;
+    const { data, error } = await sb.rpc("agenda_equipo", { desde, hasta });
+    if (error) throw error;
+    return data || [];
+  }
+
   /* ---------- estado de guardado ---------- */
   function estado(tipo) {
     const el = $("syncEstado"); if (!el) return;
@@ -1015,7 +1068,7 @@ const NUBE = (() => {
           return;
         }
       }
-      if (!sucio && !bloqueado) estado("ok");
+      if (!sucio && !bloqueado) { estado("ok"); sincronizarAgenda(); }
     })().finally(() => { enCurso = null; });
     return enCurso;
   }
@@ -1089,7 +1142,7 @@ const NUBE = (() => {
     DB = Object.assign({ empresas: [] }, nuevo);
     migrarDB();
     $("userMail").textContent = u.email || "";
-    abrirApp(); estado("ok"); renderDash();
+    abrirApp(); estado("ok"); renderDash(); sincronizarAgenda();
     if (fallos) toast(`No se pudieron descargar ${fallos} archivo(s). Recarga la página para reintentar.`);
     await ofrecerDatosLocales();
   }
@@ -1174,7 +1227,7 @@ const NUBE = (() => {
     }, 30000);
   }
 
-  return { iniciar, marcar };
+  return { iniciar, marcar, agendaEquipo };
 })();
 
 </script>
@@ -1588,7 +1641,7 @@ window.openModal=function(id){
   fRiesgo.value=e.riesgo||"III"; fEst.value=e.set||"60"; fAct.value=e.actividad||"";
   fDir.value=e.dir||"";
   llenarDepto(e.depto||""); llenarMuni(e.depto||"",e.muni||"");
-  fFecha.value=e.fecha||hoy; fFechaInf.value=e.fechaInf||hoy;
+  fFecha.value=e.fecha||hoy; fFechaInf.value=e.fechaInf||hoy; document.getElementById("fReserv").checked=!!e.reservada;
   const ids=e.audIds||[], lista=DB.auditores||[];
   modalAud=ids.filter(x=>lista.some(a=>a.id===x));
   modalAudMissing=ids.filter(x=>!lista.some(a=>a.id===x));   // perfiles eliminados: se conservan con su copia en la auditoría
@@ -1616,7 +1669,7 @@ document.getElementById("mSave").onclick=function(){
   const data={
     razon, nit:fNit.value.trim(), trab:fTrab.value, riesgo:fRiesgo.value,
     set:Number(fEst.value), actividad:fAct.value.trim(), dir:fDir.value.trim(), depto:fDepto.value, muni:fMuni.value,
-    fecha:fFecha.value, fechaInf:fFechaInf.value,
+    fecha:fFecha.value, fechaInf:fFechaInf.value, reservada:document.getElementById("fReserv").checked,
     apertura:fApert.value, cierre:fCierre.value,
     entrevistas:modalEnt.map(x=>({n:x.n.trim(),d:x.d.trim(),c:x.c.trim(),r:x.r==="resp"?"resp":"ent"})).filter(x=>x.n||x.d||x.c), entrevistados:""
   };
@@ -2855,6 +2908,20 @@ function gcPorDia(evs,filtro){
   });
   return map;
 }
+// Agenda del equipo: las propias salen de los datos locales (siempre al día);
+// las de los demás, de agenda_equipo() en Supabase (sin hallazgos ni puntajes).
+const AG={tk:0,error:""};
+const AG_COLORES=["#7c3aed","#c2410c","#0f766e","#b91c1c","#4d7c0f","#a16207","#be185d","#1e40af"];
+function agColor(clave){ let h=0; for(const ch of clave||"") h=(h*31+ch.charCodeAt(0))>>>0; return AG_COLORES[h%AG_COLORES.length]; }
+async function agendaPorDia(y,m){
+  const map=appPorDia();
+  try{
+    const filas=await NUBE.agendaEquipo(dkey(new Date(y,m,-6)), dkey(new Date(y,m+1,7)));
+    AG.error="";
+    (filas||[]).filter(r=>!r.propia).forEach(r=>{ (map[r.fecha]=map[r.fecha]||[]).push({t:"x",r}); });
+  }catch(err){ AG.error="No se pudo cargar la agenda del equipo."; console.error(err); }
+  return map;
+}
 function appPorDia(){
   const map={};
   (DB.empresas||[]).forEach(e=>{ if(!e.fecha) return; (map[e.fecha]=map[e.fecha]||[]).push({t:"a",e}); });
@@ -2879,7 +2946,9 @@ async function renderCal(){
   }
   st.innerHTML=estado+(GC.error&&gcVigente()?"":"");
   const bt=document.getElementById("calConectar"); if(bt) bt.onclick=async()=>{ try{ await gcConectar(a); renderCal(); }catch(err){ GC.error=err.message; toast(err.message); renderCal(); } };
-  const gm=gcPorDia(evs,cfg.filtro), am=appPorDia();
+  const tkA=++AG.tk; const am=await agendaPorDia(calY,calM); if(tkA!==AG.tk) return;
+  if(AG.error) st.insertAdjacentHTML("beforeend",` <span style="color:var(--no)">${esc(AG.error)}</span>`);
+  const gm=gcPorDia(evs,cfg.filtro);
   const g=document.getElementById("calGrid");
   const prim=new Date(calY,calM,1), off=(prim.getDay()+6)%7, ini=new Date(calY,calM,1-off), hoyK=dkey(new Date());
   const filas=Math.ceil((off+new Date(calY,calM+1,0).getDate())/7);
@@ -2889,7 +2958,9 @@ async function renderCal(){
     const items=[...(gm[k]||[]),...(am[k]||[])];
     const chips=items.slice(0,3).map(o=>o.t==="g"
       ?`<span class="cal-chip g" title="${esc(o.ev.titulo)}">${o.ev.allDay?"":hora(o.ev.ini)+" "}${esc(o.ev.titulo)}</span>`
-      :`<span class="cal-chip a" title="Auditoría: ${esc(o.e.razon||"")}">${esc(o.e.razon||"Auditoría")}</span>`).join("");
+      :o.t==="x"
+      ?`<span class="cal-chip x" style="--c:${agColor(o.r.responsable)}" title="${esc(o.r.cliente)} · ${esc(o.r.auditores||o.r.responsable)}">${esc(o.r.cliente)}</span>`
+      :`<span class="cal-chip a" title="Tu auditoría: ${esc(o.e.razon||"")}">${esc(o.e.razon||"Auditoría")}</span>`).join("");
     h+=`<div class="cal-cell${d.getMonth()!==calM?" out":""}${k===hoyK?" hoy":""}${GC.sel===k?" sel":""}" data-k="${k}"><span class="dn">${d.getDate()}</span>${chips}${items.length>3?`<div class="cal-more">+${items.length-3} más</div>`:""}</div>`;
   }
   g.innerHTML=h;
@@ -2902,7 +2973,9 @@ function calDia(k,gm,am){
   box.style.display="";
   box.innerHTML=`<h3 style="margin-top:0">${d} de ${MESES_CAL[m-1]} de ${y}</h3>`+(items.length?items.map(o=>o.t==="g"
     ?`<div style="border-left:4px solid var(--brand);padding:4px 10px;margin:8px 0"><b>${esc(o.ev.titulo)}</b><br><span style="font-size:12.5px;color:var(--muted)">${o.ev.allDay?"Todo el día":hora(o.ev.ini)+" – "+hora(o.ev.fin)}${o.ev.loc?" · "+esc(o.ev.loc):""}</span>${o.ev.desc?`<div style="font-size:12.5px;margin-top:3px;white-space:pre-line">${esc(o.ev.desc.replace(/<[^>]*>/g," ").slice(0,400))}</div>`:""}${o.ev.link?`<br><a href="${esc(o.ev.link)}" target="_blank" rel="noopener" style="font-size:12.5px">Abrir en Google Calendar ↗</a>`:""}</div>`
-    :`<div style="border-left:4px solid var(--brand-2);padding:4px 10px;margin:8px 0"><b>Auditoría: ${esc(o.e.razon||"")}</b><br><span style="font-size:12.5px;color:var(--muted)">${o.e.estado==="cerrada"?"Finalizada":"En curso"} · Riesgo ${esc(o.e.riesgo||"")}</span><br><button class="btn sec sm" type="button" onclick="openAudit('${o.e.id}')">Abrir auditoría</button></div>`).join(""):`<p style="color:var(--muted)">Sin eventos este día.</p>`);
+    :o.t==="x"
+    ?`<div style="border-left:4px solid ${agColor(o.r.responsable)};padding:4px 10px;margin:8px 0"><b>${o.r.reservada?"":"Auditoría: "}${esc(o.r.cliente)}</b><br><span style="font-size:12.5px;color:var(--muted)">${o.r.estado==="cerrada"?"Finalizada":"En curso"}${o.r.municipio?" · "+esc(o.r.municipio):""} · ${esc(o.r.auditores||o.r.responsable)}</span></div>`
+    :`<div style="border-left:4px solid var(--brand-2);padding:4px 10px;margin:8px 0"><b>Tu auditoría: ${esc(o.e.razon||"")}</b><br><span style="font-size:12.5px;color:var(--muted)">${o.e.estado==="cerrada"?"Finalizada":"En curso"} · Riesgo ${esc(o.e.riesgo||"")}</span><br><button class="btn sec sm" type="button" onclick="openAudit('${o.e.id}')">Abrir auditoría</button></div>`).join(""):`<p style="color:var(--muted)">Sin eventos este día.</p>`);
 }
 function calMover(n){ calM+=n; if(calM<0){calM=11;calY--;} if(calM>11){calM=0;calY++;} GC.sel=null; renderCal(); }
 document.getElementById("calPrev").onclick=()=>calMover(-1);
