@@ -97,6 +97,18 @@
   .card .pct span{font-size:12px;color:var(--muted)}
   .card .row{display:flex;gap:8px;margin-top:2px}
   .card .row .btn{flex:1;text-align:center}
+  .card h3{padding-right:118px;overflow-wrap:anywhere}
+  .encargado{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .encargado b{color:var(--ink);font-weight:600}
+  .encargado.yo b{color:var(--brand-2)}
+  .encargado span{font-style:italic}
+  .dash-alcance{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:0 0 12px;font-size:13px;color:var(--muted)}
+  .dash-alcance button{border:1px solid var(--line);background:var(--panel);color:var(--ink);border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:600;cursor:pointer}
+  .dash-alcance button.on{background:var(--brand-2);border-color:var(--brand-2);color:#fff}
+  .lectura-aviso{display:none;align-self:center;font-size:13px;background:var(--mej-bg);color:var(--mej);padding:5px 12px;border-radius:999px}
+  body.lectura .lectura-aviso{display:inline-block}
+  body.lectura #repLogos, body.lectura #repActaEdit{display:none!important}
+  body.lectura header .top-actions{opacity:.45;pointer-events:none}
   .badge{
     position:absolute;top:12px;right:12px;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px
   }
@@ -569,6 +581,7 @@
       </div>
     </div>
 
+    <div class="dash-alcance no-print" id="dashAlcance" role="group" aria-label="Qué auditorías ver"></div>
     <div class="kpis" id="kpis"></div>
     <div class="dash-tabs no-print" role="tablist" id="dashTabs"></div>
     <div class="dash-here" id="dashHere"></div>
@@ -710,6 +723,7 @@
   <section class="view" id="viewReport">
     <div class="no-print" style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap" id="navBackReport">
       <button class="btn sec sm" id="repBack">← Volver</button>
+      <span class="lectura-aviso">Informe de <b id="lecturaQuien"></b> · solo lectura</span>
       <button class="btn sm" id="repPrint">Imprimir / Guardar PDF</button>
       <button class="btn gold sm" id="repWord">Descargar Word</button>
       <button class="btn sec sm" id="repLogos">Logos de portada</button>
@@ -966,17 +980,18 @@ const NUBE = (() => {
     }
     return recorrer(db, s => esArchivo(s) ? `${PREF}${hashDe.get(s)}:${mimeDe(s)}` : s);
   }
-  async function hidratar(datos) {
+  async function hidratar(datos, owner = user.id) {
+    const propio = owner === user.id;
     const refs = new Set();
     recorrer(datos, s => { if (s.startsWith(PREF)) refs.add(s); return s; });
     const lista = [...refs], mapa = new Map(); let i = 0, fallos = 0;
     async function trabajador() {
       while (i < lista.length) {
         const ref = lista[i++], [, h, mime] = ref.split(":");
-        const { data, error } = await sb.storage.from(BUCKET).download(`${user.id}/${h}`);
+        const { data, error } = await sb.storage.from(BUCKET).download(`${owner}/${h}`);
         if (error || !data) { fallos++; continue; }
         const url = await blobADataUrl(mime ? new Blob([data], { type: mime }) : data);
-        mapa.set(ref, url); hashDe.set(url, h); subidos.add(h);
+        mapa.set(ref, url); if (propio) { hashDe.set(url, h); subidos.add(h); }
       }
     }
     await Promise.all(Array.from({ length: Math.min(6, lista.length) }, trabajador));
@@ -986,7 +1001,7 @@ const NUBE = (() => {
   /* ---------- agenda compartida (solo fecha, cliente, auditores, municipio, estado) ---------- */
   let agendaPrev = null, agendaEnCurso = null, agendaOtraVez = false;
   function nombresAud(e) {
-    const lista = DB.auditores || [], snap = e.audSnap || {};
+    const lista = dbPropio().auditores || [], snap = e.audSnap || {};
     const n = (e.audIds || []).map(id => (lista.find(a => a.id === id) || snap[id] || {}).nombre).filter(Boolean);
     if (!n.length) [e.aud1, e.aud2].forEach(x => { if (x) n.push(x); });
     return n.join(", ");
@@ -997,7 +1012,7 @@ const NUBE = (() => {
     municipio: String(r.municipio || "").slice(0, 120), estado: r.estado === "cerrada" ? "cerrada" : "curso",
     reservada: !!r.reservada
   });
-  const filasLocales = () => (DB.empresas || [])
+  const filasLocales = () => (dbPropio().empresas || [])
     .filter(e => /^\d{4}-\d{2}-\d{2}$/.test(e.fecha || ""))
     .map(e => filaAgenda({ empresa_id: e.id, fecha: e.fecha, cliente: e.razon, auditores: nombresAud(e),
       municipio: e.muni, estado: e.estado, reservada: e.reservada }));
@@ -1031,6 +1046,62 @@ const NUBE = (() => {
     return data || [];
   }
 
+  /* ---------- equipo: auditorías de los demás (solo lectura) ---------- */
+  let lectura = null, equipoTs = 0;
+  const equipo = { miNombre: "", nombres: new Map(), otros: [] };
+  const cacheAjeno = new Map();
+  function dbPropio() { return lectura ? lectura.propio : DB; }
+  async function cargarEquipo(forzar) {
+    if (!sb || !user || (!forzar && Date.now() - equipoTs < 45000)) return;
+    equipoTs = Date.now();
+    try {
+      const [nom, otros] = await Promise.all([sb.from("equipo").select("email,nombre"), sb.rpc("equipo_estados")]);
+      if (nom.error) throw nom.error;
+      if (otros.error) throw otros.error;
+      equipo.nombres = new Map((nom.data || []).map(r => [r.email.toLowerCase(), r.nombre]));
+      equipo.miNombre = equipo.nombres.get((user.email || "").toLowerCase()) || user.email || "";
+      equipo.otros = (otros.data || []).map(r => ({ uid: r.user_id, email: r.email, nombre: r.nombre, datos: r.datos || {} }));
+      cacheAjeno.clear();
+    } catch (err) { console.error("Equipo:", err); equipo.miNombre = equipo.miNombre || user.email || ""; }
+    if (!lectura && document.getElementById("viewDash").classList.contains("active")) renderDash();
+  }
+  function empresasEquipo() {
+    const mias = (dbPropio().empresas || []).map(e => ({ e, propia: true, encargado: equipo.miNombre || (user && user.email) || "" }));
+    const otras = equipo.otros.flatMap(o => (o.datos.empresas || []).map(e => ({ e, propia: false, encargado: o.nombre, uid: o.uid })));
+    return mias.concat(otras);
+  }
+  async function verInformeAjeno(uid, empId) {
+    salirLectura();
+    clearTimeout(timer);
+    if (sucio || enCurso) await sincronizar();
+    if (sucio) { toast("Espera a que se guarden tus cambios e inténtalo de nuevo"); return; }
+    const o = equipo.otros.find(x => x.uid === uid);
+    const emp = o && (o.datos.empresas || []).find(e => e.id === empId);
+    if (!emp) { toast("No se encontró esa auditoría"); return; }
+    const clave = uid + "|" + empId;
+    let db = cacheAjeno.get(clave);
+    if (!db) {
+      toast("Cargando el informe…");
+      // solo lo necesario para el informe: esta auditoría, la anterior (si es seguimiento), perfiles, logos y textos
+      const base = emp.baseId && (o.datos.empresas || []).find(e => e.id === emp.baseId);
+      const parcial = { ...o.datos, empresas: [emp, base].filter(Boolean) };
+      const r = await hidratar(parcial, uid);
+      db = Object.assign({ empresas: [] }, r.db);
+      cacheAjeno.set(clave, db);
+      if (r.fallos) toast(`No se pudieron cargar ${r.fallos} archivo(s) del informe`);
+    }
+    lectura = { uid, nombre: o.nombre, propio: DB };
+    DB = db;
+    document.body.classList.add("lectura");
+    document.getElementById("lecturaQuien").textContent = o.nombre;
+    openReport(empId);
+  }
+  function salirLectura() {
+    if (!lectura) return;
+    DB = lectura.propio; lectura = null;
+    document.body.classList.remove("lectura");
+  }
+
   /* ---------- estado de guardado ---------- */
   function estado(tipo) {
     const el = $("syncEstado"); if (!el) return;
@@ -1039,7 +1110,7 @@ const NUBE = (() => {
     el.textContent = txt; el.dataset.estado = tipo;
   }
   function marcar() {
-    if (!user || bloqueado) return;
+    if (!user || bloqueado || lectura) return;
     sucio = true; estado("pendiente");
     clearTimeout(timer); timer = setTimeout(sincronizar, 1200);
   }
@@ -1049,7 +1120,7 @@ const NUBE = (() => {
       while (sucio && !bloqueado) {
         sucio = false; estado("guardando");
         try {
-          const datos = await deshidratar(DB);
+          const datos = await deshidratar(dbPropio());
           if (existe) {
             const { data, error } = await sb.from(TABLA).update({ datos, version: version + 1 })
               .eq("user_id", user.id).eq("version", version).select("version");
@@ -1142,7 +1213,7 @@ const NUBE = (() => {
     DB = Object.assign({ empresas: [] }, nuevo);
     migrarDB();
     $("userMail").textContent = u.email || "";
-    abrirApp(); estado("ok"); renderDash(); sincronizarAgenda();
+    abrirApp(); estado("ok"); renderDash(); sincronizarAgenda(); cargarEquipo(true);
     if (fallos) toast(`No se pudieron descargar ${fallos} archivo(s). Recarga la página para reintentar.`);
     await ofrecerDatosLocales();
   }
@@ -1170,6 +1241,7 @@ const NUBE = (() => {
     else toast("No se pudo subir todo. La copia local se conserva; intenta de nuevo más tarde.");
   }
   async function salir(motivo) {
+    salirLectura();
     if (sucio || enCurso) {
       await sincronizar();
       if (sucio && !motivo && !await preguntar("Hay cambios que aún no se guardaron en la nube. Si sales ahora se perderán. Descarga un respaldo si los necesitas.", "Salir de todos modos", "Cambios sin guardar")) return;
@@ -1227,7 +1299,8 @@ const NUBE = (() => {
     }, 30000);
   }
 
-  return { iniciar, marcar, agendaEquipo };
+  return { iniciar, marcar, agendaEquipo, cargarEquipo, empresasEquipo, verInformeAjeno, salirLectura,
+    enLectura: () => !!lectura, miNombre: () => equipo.miNombre };
 })();
 
 </script>
@@ -1464,9 +1537,17 @@ function renderWelcome(){
   const dia=Math.floor((Date.now()-new Date(new Date().getFullYear(),0,0))/864e5);
   el.innerHTML=`<div class="w-t">Bienvenido(a)${nom?', '+esc(nom):''}</div><div class="w-f">${FRASES[dia%FRASES.length]}</div>`;
 }
+let dashAlcance="equipo";
+window.setDashAlcance=function(k){ dashAlcance=k; renderDash(); };
 function renderDash(){
   renderWelcome();
-  const emps = DB.empresas;
+  const todas = NUBE.empresasEquipo();
+  const filas = dashAlcance==="mias" ? todas.filter(x=>x.propia) : todas;
+  const emps = filas.map(x=>x.e);
+  const info = new Map(filas.map(x=>[x.e,x]));
+  const nOtras = todas.length - todas.filter(x=>x.propia).length;
+  document.getElementById("dashAlcance").innerHTML = `<span>Ver:</span>`+[["equipo",`Todo el equipo (${todas.length})`],["mias",`Solo mías (${todas.length-nOtras})`]]
+    .map(([k,l])=>`<button type="button" class="${dashAlcance===k?"on":""}" aria-pressed="${dashAlcance===k}" onclick="setDashAlcance('${k}')">${l}</button>`).join("");
   let terminadas=0, enProceso=0, promedio=0;
   emps.forEach(e=>{
     if(e.estado==='cerrada'){ terminadas++; promedio+=computeScore(e).pct; }
@@ -1501,10 +1582,12 @@ function renderDash(){
   }
   host.innerHTML = `<div class="cards">`+lista.map(e=>{
     const s=computeScore(e); const cat=categoria(s.pct);
+    const x = info.get(e), propia = x.propia;
     const badge = s.nPend===0 ? `<span class="badge ${cat.k}">${cat.label}</span>` : `<span class="badge mod" style="background:var(--na-bg);color:var(--na)">${s.evaluados}/${s.total} evaluados</span>`;
     return `<div class="card">
       ${badge}
-      <div><h3>${esc(e.razon)}</h3><div class="nit">NIT ${esc(e.nit||'—')} · ${esc(e.fecha||'')}</div></div>
+      <div><h3>${esc(e.razon)}</h3><div class="nit">NIT ${esc(e.nit||'—')} · ${esc(e.fecha||'')}</div>
+        <div class="encargado${propia?" yo":""}">Encargado: <b>${esc(x.encargado)}</b>${propia?"":` <span>· solo lectura</span>`}</div></div>
       <div class="meta">
         <span class="tag risk">Riesgo ${e.riesgo}</span>
         <span class="tag">${e.set} estándares</span>
@@ -1514,12 +1597,12 @@ function renderDash(){
       </div>
       <div class="pct"><b style="color:${cat.color}">${s.pct.toFixed(1)}%</b><span>${s.nCumple} C · ${s.nNo} NC · ${s.nMej} C-OM</span></div>
       <div class="prog"><i style="width:${s.pct.toFixed(1)}%;background:${cat.color}"></i></div>
-      <div class="row">
+      ${!propia?`<div class="row"><button class="btn sm" onclick="NUBE.verInformeAjeno('${x.uid}','${e.id}')">Ver informe</button></div>`:`<div class="row">
         <button class="btn sec sm" onclick="openAudit('${e.id}')">Auditar</button>
         <button class="btn sm" onclick="openReport('${e.id}')">Informe</button>
         <button class="btn sec sm" title="Crear auditoría de seguimiento (compara con esta)" style="flex:0 0 auto" onclick="dupEmp('${e.id}')">⧉</button>
         <button class="btn sec sm" title="Eliminar" style="flex:0 0 auto;color:var(--no)" onclick="delEmp('${e.id}')">✕</button>
-      </div>
+      </div>`}
     </div>`;
   }).join("")+`</div>`;
 }
@@ -2808,7 +2891,7 @@ function renderActa(){
   if(ob) ob.addEventListener("input",()=>{ const x=e.actas&&e.actas.apertura; if(!x) return; x.nota=ob.innerText.replace(/\n$/,"").trim(); save(); });
 }
 
-document.getElementById("repBack").onclick=()=>{ currentId=reportEmpId; actaMode=null; actaUi(false); showView("viewAudit"); renderAudit(); };
+document.getElementById("repBack").onclick=()=>{ if(NUBE.enLectura()){ showView("viewDash"); return; } currentId=reportEmpId; actaMode=null; actaUi(false); showView("viewAudit"); renderAudit(); };
 document.getElementById("repPrint").onclick=()=>actaMode?window.print():pedirLogos(()=>{toast('Preparando anexos…');anexosListos.then(()=>setTimeout(()=>window.print(),80));});
 document.getElementById("repWord").onclick=()=>actaMode?exportWord():pedirLogos(()=>{toast("Preparando anexos…");anexosListos.then(exportWord);});
 document.getElementById("repLogos").onclick=()=>pedirLogos(()=>toast("Portada actualizada"));
@@ -2834,6 +2917,8 @@ function exportWord(){
    NAV / EXPORT / KEY / MISC
    ===================================================================== */
 function showView(id){
+  if(id!=="viewReport") NUBE.salirLectura();
+  if(id==="viewDash") NUBE.cargarEquipo();
   document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
   document.getElementById(id).classList.add("active");
   window.scrollTo(0,0);
