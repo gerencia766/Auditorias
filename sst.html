@@ -506,6 +506,37 @@
   .pf-note{font-size:12px;color:var(--muted);margin-top:10px}
   @media(max-width:860px){.perf-grid{grid-template-columns:1fr}}
 
+  /* ---------- Novedades ---------- */
+  .nov-modal{max-width:880px;padding:0;overflow:hidden}
+  .nov-head{background:var(--brand-2);color:#fff;padding:26px 30px 24px}
+  .nov-head .k{font-size:12.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#9ff5ea}
+  .nov-head h2{font-size:28px;margin:6px 0 6px;color:#fff}
+  .nov-head p{margin:0;font-size:14.5px;color:#e3effa}
+  .nov-body{padding:24px 30px 8px;display:flex;flex-direction:column;gap:22px}
+  .nov-sec{font-size:17px;font-weight:800;color:var(--brand-2);display:flex;align-items:center;gap:9px;margin:0 0 10px}
+  .nov-sec i{width:10px;height:10px;border-radius:50%;background:var(--brand);display:inline-block}
+  .nov-sec.fut i{background:var(--gold)}
+  .nov-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .nov-it{display:flex;gap:12px;align-items:flex-start;border:1px solid var(--line);border-radius:12px;padding:13px 14px;background:#fff}
+  .nov-it.dest{border:2px solid var(--brand)}
+  .nov-ic{flex:none;width:38px;height:38px;border-radius:10px;background:#e8f2fa;display:grid;place-items:center}
+  .nov-ic svg{width:20px;height:20px}
+  .nov-it b{display:block;font-size:14.5px;margin-bottom:2px}
+  .nov-it span{font-size:13px;color:#44576a;line-height:1.45}
+  .nov-pasos{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;background:var(--paper);border-radius:12px;padding:14px}
+  .nov-paso{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:#44576a;line-height:1.45}
+  .nov-paso em{flex:none;font-style:normal;width:28px;height:28px;border-radius:50%;background:var(--brand-2);color:#fff;font-weight:800;display:grid;place-items:center;font-size:14px}
+  .nov-paso b{display:block;color:var(--ink);font-size:14px}
+  .nov-avisos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+  .nov-av{background:#e8f2fa;border-radius:12px;padding:12px 14px;font-size:13px;color:#33475b;line-height:1.45}
+  .nov-av b{display:block;color:var(--ink);font-size:14px;margin-bottom:2px}
+  .nov-fut{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+  .nov-f{border:1.5px dashed var(--gold);border-radius:12px;padding:12px 14px;font-size:13px;color:#44576a;line-height:1.45;background:#fff}
+  .nov-f small{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#8a5a12;background:var(--mej-bg);padding:3px 8px;border-radius:99px;margin-bottom:6px}
+  .nov-f b{display:block;color:var(--ink);font-size:14px;margin-bottom:2px}
+  .nov-foot{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:16px 30px 22px;border-top:1px solid var(--line);margin-top:14px}
+  .nov-foot span{font-size:12.5px;color:var(--muted);flex:1;min-width:240px}
+  @media(max-width:700px){.nov-grid,.nov-pasos,.nov-avisos,.nov-fut{grid-template-columns:1fr}.nov-head,.nov-body,.nov-foot{padding-left:18px;padding-right:18px}}
   /* ---------- Acceso (login) y estado de guardado ---------- */
   body.bloqueado > :not(#acceso):not(#toast):not(.modal-bg):not(script){display:none!important}
   #acceso{display:none}
@@ -582,6 +613,8 @@
       <div class="menu-conf" id="menuConf">
         <button class="btn ghost sm" id="btnConf" type="button" aria-haspopup="true" aria-expanded="false">Configuración ▾</button>
         <div class="menu-pop" role="menu">
+          <button type="button" role="menuitem" id="btnNovedades">Novedades</button>
+          <hr>
           <button type="button" role="menuitem" id="btnLogos">Logos del informe</button>
           <button type="button" role="menuitem" id="btnTextos">Textos predeterminados</button>
           <hr>
@@ -933,6 +966,40 @@
   </div>
 </div>
 
+
+<!-- Novedades (se muestra una vez por usuario y versión; se reabre desde Configuración) -->
+<div class="modal-bg" id="novBg" style="z-index:115">
+  <div class="modal nov-modal" role="dialog" aria-modal="true" aria-labelledby="novTit">
+    <div class="nov-head">
+      <div class="k">Novedades · noviembre 2026</div>
+      <h2 id="novTit">Lo nuevo para el equipo auditor</h2>
+      <p>Un resumen de lo que cambió en la herramienta y de lo que viene.</p>
+    </div>
+    <div class="nov-body">
+      <div><h3 class="nov-sec"><i></i>Ya disponible</h3><div class="nov-grid"><div class="nov-it"><div class="nov-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#1D71B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></div><div><b>Nueva página de inicio</b><span>La dirección principal es ahora la portada de Auditorías: desde ahí entras a SG-SST y, más adelante, a PESV.</span></div></div><div class="nov-it dest"><div class="nov-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#1D71B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><circle cx="17" cy="9" r="2.5"/><path d="M17 14c2.5 0 4.2 1.5 4.6 4"/></svg></div><div><b>Auditorías compartidas</b><span>Al crear una auditoría nueva eliges qué compañeros podrán editarla después. Solo quien la crea puede eliminarla o cambiar esos permisos.</span></div></div><div class="nov-it"><div class="nov-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#1D71B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2.5"/><path d="M5.5 17c.6-2 2-3 3.5-3s2.9 1 3.5 3"/><path d="M14.5 9h4"/><path d="M14.5 13h4"/></svg></div><div><b>Perfiles de todo el equipo</b><span>En «Equipo auditor» puedes agregar dos o más auditores, también perfiles de tus compañeros, con su firma y soportes.</span></div></div><div class="nov-it"><div class="nov-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#1D71B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18"/><path d="M8 3v4"/><path d="M16 3v4"/></svg></div><div><b>Finalizadas por mes</b><span>«Auditorías finalizadas» las agrupa por mes, con la cantidad y el promedio de cumplimiento.</span></div></div><div class="nov-it"><div class="nov-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#1D71B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17c3-1 4-6 6-6s1.5 5 4 5 3-3 4.5-3 2 1 3.5 1"/><path d="M3 21h18"/></svg></div><div><b>Firmas al final del informe</b><span>Van en la última página, después del plan de acción y de los anexos.</span></div></div><div class="nov-it"><div class="nov-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#1D71B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16"/><path d="M4 12h16"/><path d="M4 18h10"/><circle cx="18" cy="18" r="2"/></svg></div><div><b>Menú más limpio</b><span>Logos, textos y respaldos están en «Configuración». Un clic en el logo te lleva a la portada.</span></div></div><div class="nov-it"><div class="nov-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#1D71B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/><path d="M8 14l2 4 2-4 2 4 2-4"/></svg></div><div><b>Word con imágenes</b><span>«Descargar Word» incluye logos, gráficas, fotos de evidencia y firmas. Ábrelo en Microsoft Word.</span></div></div><div class="nov-it"><div class="nov-ic"><svg viewBox="0 0 24 24" fill="none" stroke="#1D71B8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg></div><div><b>Lista de chequeo actualizada</b><span>El ítem 1.1.8 cita la Res. 3461 de 2025 (Comité de Convivencia, reuniones mensuales) y los 60 ítems tienen criterio y normatividad.</span></div></div></div></div>
+      <div><h3 class="nov-sec"><i></i>Cómo compartir una auditoría nueva</h3>
+        <div class="nov-pasos">
+          <div class="nov-paso"><em>1</em><div><b>Crea la auditoría</b>Botón «+ Nueva auditoría», como siempre.</div></div>
+          <div class="nov-paso"><em>2</em><div><b>Marca quién puede editar</b>En «Quién puede editar esta auditoría» elige a tus compañeros.</div></div>
+          <div class="nov-paso"><em>3</em><div><b>Trabajen cuando quieran</b>La verán en «Las que puedo editar». Si coinciden, no se pierde lo de nadie.</div></div>
+        </div></div>
+      <div class="nov-avisos">
+        <div class="nov-av"><b>Las auditorías anteriores no cambian</b>Quedan igual y solo las edita quien las creó. Compartir aplica a las nuevas.</div>
+        <div class="nov-av"><b>Para enviar un informe, usa PDF</b>El Word se abre en Microsoft Word; el PDF sale completo en cualquier equipo.</div>
+      </div>
+      <div><h3 class="nov-sec fut"><i></i>Lo que viene</h3>
+        <div class="nov-fut">
+          <div class="nov-f"><small>En desarrollo</small><b>Auditoría PESV</b>Plan Estratégico de Seguridad Vial, con la misma forma de trabajo de SG-SST.</div>
+          <div class="nov-f"><small>Próximamente</small><b>Portada con tu sesión</b>La página de inicio con el logo real, tu nombre y acceso directo.</div>
+          <div class="nov-f"><small>Más adelante</small><b>Resumen del equipo</b>Auditorías en curso, próximas fechas y carga de cada auditor desde el inicio.</div>
+        </div></div>
+    </div>
+    <div class="nov-foot">
+      <span>¿Algo no funciona o tienes una idea? Escribe a gerencia@saberlaboral.com · Puedes volver a ver esto en Configuración › Novedades.</span>
+      <button class="btn" type="button" id="novOk">Entendido</button>
+    </div>
+  </div>
+</div>
 
 <!-- Confirmación propia (los confirm() del navegador se bloquean en algunos entornos) -->
 <div class="modal-bg" id="confBg" style="z-index:120">
@@ -1496,6 +1563,7 @@ const NUBE = (() => {
     migrarDB();
     $("userMail").textContent = u.email || "";
     abrirApp(); estado("ok"); renderDash(); sincronizarAgenda(); cargarEquipo(true);
+    if (typeof revisarNovedades === "function") revisarNovedades();
     if (fallos) toast(`No se pudieron descargar ${fallos} archivo(s). Recarga la página para reintentar.`);
     await ofrecerDatosLocales();
   }
@@ -3587,6 +3655,18 @@ document.addEventListener("keydown",ev=>{ const bg=document.getElementById("evBg
   document.addEventListener("click",ev=>{ if(!m.contains(ev.target)) abrir(false); });
   document.addEventListener("keydown",ev=>{ if(ev.key==="Escape"&&m.classList.contains("open")){ abrir(false); b.focus(); } });
 })();
+/* ---- Novedades: una vez por usuario y versión (se guarda en su cuenta, no en el navegador) ---- */
+const NOVEDADES_VER="2026-11-22";
+function abrirNovedades(){ const bg=document.getElementById("novBg"); bg.classList.add("open"); bg.scrollTop=0; setTimeout(()=>{ document.getElementById("novOk").focus({preventScroll:true}); bg.scrollTop=0; },40); }
+function cerrarNovedades(){
+  document.getElementById("novBg").classList.remove("open");
+  if(!NUBE.enLectura() && (DB.novedadesVistas||"")<NOVEDADES_VER){ DB.novedadesVistas=NOVEDADES_VER; save(); }
+}
+window.revisarNovedades=function(){ if(!NUBE.enLectura() && (DB.novedadesVistas||"")<NOVEDADES_VER) abrirNovedades(); };
+document.getElementById("novOk").onclick=cerrarNovedades;
+document.getElementById("novBg").addEventListener("click",ev=>{ if(ev.target.id==="novBg") cerrarNovedades(); });
+document.addEventListener("keydown",ev=>{ if(ev.key==="Escape"&&document.getElementById("novBg").classList.contains("open")) cerrarNovedades(); });
+document.getElementById("btnNovedades").onclick=abrirNovedades;
 document.getElementById("btnLogos").onclick=()=>showView("viewLogos");
 document.getElementById("btnTextos").onclick=()=>showView("viewTextos");
 document.getElementById("textosBack").onclick=()=>showView("viewDash");
