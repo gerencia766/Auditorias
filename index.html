@@ -28,20 +28,21 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --navy:#0a1f3d;
-    --navy-2:#123a6b;
-    --blue:#1d5bbf;
+    --navy:#0b2440;
+    --navy-2:#14528a;
+    --blue:#1D71B8;
+    --turq:#05DEC2;
     --ink:#132238;
     --muted:#5a6a80;
     --line:#dfe6ef;
     --bg:#f3f6fa;
     --white:#ffffff;
-    --sst:#1d4f9e;
-    --sst-2:#143a78;
-    --sst-soft:#e7eefa;
-    --pesv:#1479b8;
-    --pesv-2:#0d5a8c;
-    --pesv-soft:#e4f1fa;
+    --sst:#1D71B8;
+    --sst-2:#15578f;
+    --sst-soft:#e8f2fa;
+    --pesv:#0b8f99;
+    --pesv-2:#076b73;
+    --pesv-soft:#e0f6f4;
     --radius:18px;
     --shadow:0 20px 45px -22px rgba(10,31,61,.35);
   }
@@ -58,8 +59,8 @@
   .hero{
     position:relative;overflow:hidden;color:var(--white);
     background:
-      radial-gradient(900px 420px at 85% -10%, rgba(59,130,246,.40), transparent 60%),
-      radial-gradient(700px 380px at 5% 110%, rgba(20,121,184,.35), transparent 60%),
+      radial-gradient(900px 420px at 85% -10%, rgba(29,113,184,.55), transparent 60%),
+      radial-gradient(700px 380px at 5% 110%, rgba(5,222,194,.22), transparent 60%),
       linear-gradient(160deg, var(--navy) 0%, var(--navy-2) 100%);
     padding-bottom:150px;
   }
@@ -96,8 +97,8 @@
     transition:background .15s;
   }
   .pill:hover{background:rgba(255,255,255,.1)}
-  .pill.solid{background:#fff;color:var(--navy);border-color:#fff}
-  .pill.solid:hover{background:#e8f0fc}
+  .pill.solid{background:var(--turq);color:#06293a;border-color:var(--turq)}
+  .pill.solid:hover{filter:brightness(1.07)}
 
   .hero-content{position:relative;padding:50px 0 0;max-width:720px}
   .eyebrow{
@@ -105,10 +106,10 @@
     padding:7px 14px;border-radius:999px;background:rgba(255,255,255,.1);
     border:1px solid rgba(255,255,255,.15);letter-spacing:.03em;
   }
-  .eyebrow .pulse{width:8px;height:8px;border-radius:50%;background:#7cb8ff;box-shadow:0 0 0 0 rgba(124,184,255,.7);animation:pulse 2s infinite}
-  @keyframes pulse{70%{box-shadow:0 0 0 10px rgba(124,184,255,0)}100%{box-shadow:0 0 0 0 rgba(124,184,255,0)}}
+  .eyebrow .pulse{width:8px;height:8px;border-radius:50%;background:var(--turq);box-shadow:0 0 0 0 rgba(5,222,194,.7);animation:pulse 2s infinite}
+  @keyframes pulse{70%{box-shadow:0 0 0 10px rgba(5,222,194,0)}100%{box-shadow:0 0 0 0 rgba(5,222,194,0)}}
   .hero h1{margin-top:22px;font-size:clamp(40px,7vw,68px);font-weight:800;line-height:1.02;letter-spacing:-.035em}
-  .hero h1 span{background:linear-gradient(90deg,#8cc4ff,#d6e8ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .hero h1 span{background:linear-gradient(90deg,#7fd0ff,#5ff0dc);-webkit-background-clip:text;background-clip:text;color:transparent}
   .hero p.lead{margin-top:20px;font-size:clamp(16px,2vw,19px);opacity:.82;max-width:580px}
 
   /* ---------- TARJETAS ---------- */
@@ -174,6 +175,39 @@
   footer a{text-decoration:none;color:var(--white);font-weight:600}
   footer a:hover{text-decoration:underline}
 
+
+  /* ---------- Menú lateral flotante (igual al de la herramienta) ---------- */
+  #rail{position:fixed;left:16px;top:50%;transform:translateY(-50%);z-index:45;display:flex;flex-direction:column;gap:2px;
+    width:62px;padding:9px;box-sizing:border-box;background:rgba(255,255,255,.94);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
+    border:1px solid var(--line);border-radius:24px;box-shadow:0 10px 30px rgba(11,36,64,.18);overflow:hidden;
+    transition:width .34s cubic-bezier(.2,.8,.2,1),box-shadow .3s,border-radius .3s}
+  #rail.abierto{width:244px;border-radius:20px;box-shadow:0 20px 48px rgba(11,36,64,.28)}
+  .rail-it{position:relative;z-index:1;display:flex;align-items:center;gap:13px;height:44px;width:100%;flex:none;padding:0 10px;box-sizing:border-box;
+    border:0;background:none;border-radius:14px;color:#33475b;font-family:inherit;font-size:14px;font-weight:600;line-height:1;white-space:nowrap;text-decoration:none;cursor:pointer;
+    transition:background .2s,color .2s}
+  .rail-it:hover{background:rgba(29,113,184,.07);color:var(--blue)}
+  .rail-it:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
+  .rail-it.activo{color:var(--blue)}
+  .rail-it[aria-disabled="true"]{opacity:.55;cursor:default}
+  .rail-ic{flex:none;width:22px;height:22px;display:grid;place-items:center;transition:transform .35s cubic-bezier(.3,1.7,.5,1)}
+  .rail-it:hover .rail-ic{transform:scale(1.16) rotate(-4deg)}
+  .rail-tx{display:flex;align-items:center;gap:8px;opacity:0;transform:translateX(-10px);transition:opacity .16s,transform .2s}
+  .rail-tx small{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#8a5a12;background:#faf1de;padding:3px 7px;border-radius:99px}
+  #rail.abierto .rail-tx{opacity:1;transform:none;transition:opacity .28s calc(var(--i)*30ms + 60ms),transform .38s cubic-bezier(.2,.8,.2,1) calc(var(--i)*30ms + 60ms)}
+  .rail-ind{position:absolute;left:9px;right:9px;top:0;height:44px;border-radius:14px;z-index:0;pointer-events:none;opacity:0;
+    background:linear-gradient(135deg,#dcecfb,#cdf8f2);box-shadow:inset 0 0 0 1px rgba(29,113,184,.16);transition:transform .42s cubic-bezier(.2,.9,.25,1.15),opacity .2s}
+  .rail-sep{flex:none;height:1px;background:var(--line);margin:5px 8px}
+  @media (min-width:761px) and (max-width:1360px){ .wrap{padding-left:100px} }
+  @media (max-width:760px){
+    #rail{top:auto;bottom:12px;left:50%;transform:translateX(-50%);flex-direction:row;width:auto;max-width:calc(100vw - 20px);padding:6px;border-radius:20px;overflow-x:auto;scrollbar-width:none}
+    #rail::-webkit-scrollbar{display:none}
+    #rail .rail-tx{display:none}
+    .rail-it{width:46px;justify-content:center;padding:0}
+    .rail-sep{width:1px;height:28px;margin:8px 3px}
+    .rail-ind{left:0;right:auto}
+    body{padding-bottom:84px}
+  }
+  @media (prefers-reduced-motion:reduce){#rail,#rail *{transition:none!important}}
   @media (max-width:640px){
     .session .hello{display:none}
     .hero{padding-bottom:130px}
@@ -209,6 +243,17 @@
     </div>
   </div>
 </header>
+
+<nav id="rail" aria-label="Menú principal">
+  <span class="rail-ind" aria-hidden="true"></span>
+  <a class="rail-it activo" style="--i:0" href="./" aria-current="page"><span class="rail-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></span><span class="rail-tx">Inicio</span></a>
+  <span class="rail-sep" aria-hidden="true"></span>
+  <a class="rail-it" style="--i:1" href="sst.html"><span class="rail-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 18h20"/><path d="M4 18v-2a8 8 0 0 1 16 0v2"/><path d="M12 8V5"/></svg></span><span class="rail-tx">Auditoría SG-SST</span></a>
+  <a class="rail-it" style="--i:2" href="pesv.html" id="railPesv"><span class="rail-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="3"/><circle cx="12" cy="7" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="17" r="1.5"/></svg></span><span class="rail-tx">Auditoría PESV<small id="railPesvTag">Pronto</small></span></a>
+  <span class="rail-sep" aria-hidden="true"></span>
+  <a class="rail-it" style="--i:3" href="mailto:gerencia@saberlaboral.com?subject=Soporte%20plataforma%20de%20auditor%C3%ADas"><span class="rail-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg></span><span class="rail-tx">Soporte</span></a>
+  <a class="rail-it" style="--i:4" href="https://saberlaboral.com" target="_blank" rel="noopener"><span class="rail-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18"/><path d="M12 3a14 14 0 0 0 0 18"/></svg></span><span class="rail-tx">saberlaboral.com</span></a>
+</nav>
 
 <main class="wrap">
   <div class="cards">
@@ -286,21 +331,46 @@
   </div>
 </footer>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.3/dist/umd/supabase.js" integrity="sha384-BWcjm9OdFth9TbhCxZPdm+gAOUMAzQy9nmTs12ioXdCcbVnJaPMn+fMUoQCLt60R" crossorigin="anonymous"></script>
 <script>
 /* ================== CONFIGURACIÓN ==================
    PESV_LISTO: cámbialo a true cuando subas pesv.html.
-   SUPABASE_URL y SUPABASE_KEY: copia los MISMOS valores que usa sst.html
-   (busca "createClient" en sst.html). Si los dejas vacíos, el home
-   simplemente muestra el botón "Ingresar".
+   SUPABASE_URL y SUPABASE_KEY: los mismos de sst.html. La sesión se lee
+   de la misma pestaña (la herramienta la guarda en sessionStorage).
 ==================================================== */
 const PESV_LISTO   = false;
-const SUPABASE_URL = '';
-const SUPABASE_KEY = '';
+const SUPABASE_URL = 'https://tkonkkkhbhxfgjbzhuwr.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRrb25ra2toYmh4ZmdqYnpodXdyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEzODUzNjcsImV4cCI6MjEwNjk2MTM2N30.cTc21ucVYUQUI49_MLGi-FgQyaz04VertSzXb4q769k';   // clave pública (anon); la seguridad la dan las políticas RLS
 
 document.getElementById('y').textContent = new Date().getFullYear();
 
+// Menú lateral: se expande al pasar el mouse y resalta "Inicio"
+(function(){
+  const rail = document.getElementById('rail'), ind = rail.querySelector('.rail-ind');
+  const movil = () => !!(window.matchMedia && window.matchMedia('(max-width:760px)').matches);
+  let t = null;
+  const abrir = on => rail.classList.toggle('abierto', !movil() && on);
+  rail.addEventListener('mouseenter', () => { clearTimeout(t); t = setTimeout(() => abrir(true), 80); });
+  rail.addEventListener('mouseleave', () => { clearTimeout(t); t = setTimeout(() => abrir(false), 220); });
+  rail.addEventListener('focusin', () => abrir(true));
+  rail.addEventListener('focusout', ev => { if (!rail.contains(ev.relatedTarget)) abrir(false); });
+  function colocar(){
+    const a = rail.querySelector('.rail-it.activo'); if (!a || !rail.offsetWidth) return;
+    ind.style.width = movil() ? a.offsetWidth + 'px' : '';
+    ind.style.transform = movil() ? `translate(${a.offsetLeft}px,${a.offsetTop}px)` : `translateY(${a.offsetTop}px)`;
+    ind.style.opacity = 1;
+  }
+  if (window.ResizeObserver) new ResizeObserver(colocar).observe(rail);
+  window.addEventListener('resize', () => { abrir(false); colocar(); });
+  colocar();
+})();
+
 // Estado de la tarjeta PESV
+if (PESV_LISTO) document.getElementById('railPesvTag').remove();
+else {
+  const rp = document.getElementById('railPesv');
+  rp.removeAttribute('href'); rp.setAttribute('aria-disabled', 'true'); rp.setAttribute('title', 'Disponible próximamente');
+}
 if (!PESV_LISTO) {
   document.getElementById('card-pesv').classList.add('soon');
   const b = document.getElementById('btn-pesv');
@@ -313,12 +383,13 @@ if (!PESV_LISTO) {
 (async () => {
   if (!SUPABASE_URL || !SUPABASE_KEY || !window.supabase) return;
   try {
-    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { storage: window.sessionStorage, persistSession: true, autoRefreshToken: true } });
     const { data: { session } } = await sb.auth.getSession();
     if (!session) return;
     const u = session.user;
-    const nombre = (u.user_metadata && (u.user_metadata.nombre || u.user_metadata.full_name || u.user_metadata.name))
-                   || u.email.split('@')[0];
+    let nombre = '';
+    try { const { data } = await sb.from('equipo').select('nombre').ilike('email', u.email).maybeSingle(); nombre = (data && data.nombre) || ''; } catch (_) { }
+    nombre = nombre || (u.user_metadata && (u.user_metadata.nombre || u.user_metadata.full_name)) || u.email.split('@')[0];
     const primer = String(nombre).split(' ')[0];
     const box = document.getElementById('session');
     box.innerHTML = '';
