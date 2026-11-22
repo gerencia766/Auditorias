@@ -6,47 +6,64 @@
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
 <title>Auditorías · Saber Laboral</title>
+<meta name="description" content="Plataforma de auditorías de Saber Laboral: Sistemas de Gestión SST y Plan Estratégico de Seguridad Vial (PESV).">
+<meta name="theme-color" content="#0a1f3d">
+
+<!-- Vista previa al compartir (WhatsApp, correo, redes) -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Saber Laboral">
+<meta property="og:title" content="Auditorías · Saber Laboral">
+<meta property="og:description" content="Herramientas técnicas de auditoría: SG-SST y PESV.">
+<meta property="og:url" content="https://gerencia766.github.io/Auditorias/">
+<meta property="og:image" content="https://gerencia766.github.io/Auditorias/logo.png">
+<meta name="twitter:card" content="summary">
+
+<!-- Favicon: usa logo.png si existe; si no, el escudo azul -->
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231d5bbf'/%3E%3Cpath d='M16 6l8 3.5v5.5c0 5-3.4 8.6-8 9.5-4.6-.9-8-4.5-8-9.5V9.5L16 6z' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linejoin='round'/%3E%3Cpath d='M12.5 15.5l2.5 2.5 4.5-4.5' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="apple-touch-icon" href="logo.png">
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --navy:#0b1f33;
-    --navy-2:#12324f;
-    --ink:#14212e;
-    --muted:#5d6b7a;
-    --line:#e3e8ee;
-    --bg:#f5f7fa;
+    --navy:#0a1f3d;
+    --navy-2:#123a6b;
+    --blue:#1d5bbf;
+    --ink:#132238;
+    --muted:#5a6a80;
+    --line:#dfe6ef;
+    --bg:#f3f6fa;
     --white:#ffffff;
-    --sst:#0f8a63;
-    --sst-2:#0b6b4d;
-    --sst-soft:#e4f5ee;
-    --pesv:#e0661b;
-    --pesv-2:#b94f10;
-    --pesv-soft:#fdeee3;
-    --radius:20px;
-    --shadow:0 20px 45px -20px rgba(11,31,51,.35);
+    --sst:#1d4f9e;
+    --sst-2:#143a78;
+    --sst-soft:#e7eefa;
+    --pesv:#1479b8;
+    --pesv-2:#0d5a8c;
+    --pesv-soft:#e4f1fa;
+    --radius:18px;
+    --shadow:0 20px 45px -22px rgba(10,31,61,.35);
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  html{scroll-behavior:smooth}
   body{
     font-family:'Plus Jakarta Sans',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
     background:var(--bg);color:var(--ink);line-height:1.5;
-    -webkit-font-smoothing:antialiased;
+    -webkit-font-smoothing:antialiased;min-height:100vh;display:flex;flex-direction:column;
   }
   a{color:inherit}
-  .wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 24px;width:100%}
 
   /* ---------- HERO ---------- */
   .hero{
     position:relative;overflow:hidden;color:var(--white);
     background:
-      radial-gradient(900px 420px at 85% -10%, rgba(15,138,99,.45), transparent 60%),
-      radial-gradient(700px 380px at 5% 110%, rgba(224,102,27,.35), transparent 60%),
+      radial-gradient(900px 420px at 85% -10%, rgba(59,130,246,.40), transparent 60%),
+      radial-gradient(700px 380px at 5% 110%, rgba(20,121,184,.35), transparent 60%),
       linear-gradient(160deg, var(--navy) 0%, var(--navy-2) 100%);
     padding-bottom:150px;
   }
-  .hero::before{ /* cuadrícula sutil */
+  .hero::before{
     content:"";position:absolute;inset:0;
     background-image:
       linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
@@ -56,67 +73,65 @@
     -webkit-mask-image:linear-gradient(to bottom, black 30%, transparent 95%);
     pointer-events:none;
   }
-  nav{
-    position:relative;display:flex;align-items:center;justify-content:space-between;
-    padding:26px 0;
-  }
+  nav{position:relative;display:flex;align-items:center;justify-content:space-between;gap:16px;padding:22px 0}
   .brand{display:flex;align-items:center;gap:12px;text-decoration:none;font-weight:700;font-size:18px;letter-spacing:-.01em}
+  .brand-logo{
+    height:44px;width:auto;max-width:160px;object-fit:contain;
+    background:#fff;border-radius:10px;padding:5px 8px;
+  }
   .brand-mark{
-    width:38px;height:38px;border-radius:11px;display:grid;place-items:center;
-    background:linear-gradient(135deg,var(--sst),var(--pesv));
-    box-shadow:0 6px 18px rgba(0,0,0,.25);
+    width:40px;height:40px;border-radius:11px;display:none;place-items:center;
+    background:linear-gradient(135deg,var(--blue),var(--pesv));box-shadow:0 6px 18px rgba(0,0,0,.25);
   }
+  .brand.no-logo .brand-logo{display:none}
+  .brand.no-logo .brand-mark{display:grid}
   .brand small{display:block;font-weight:500;font-size:12px;opacity:.7;letter-spacing:.04em}
-  .nav-links{display:flex;gap:8px}
-  .nav-links a{
-    text-decoration:none;font-size:14px;font-weight:600;padding:9px 16px;border-radius:999px;
-    border:1px solid rgba(255,255,255,.18);transition:background .15s;
-  }
-  .nav-links a:hover{background:rgba(255,255,255,.1)}
 
-  .hero-content{position:relative;padding:56px 0 0;max-width:720px}
+  .session{display:flex;align-items:center;gap:10px;font-size:14px}
+  .session .hello{opacity:.85}
+  .session .hello b{font-weight:700;opacity:1}
+  .pill{
+    text-decoration:none;font-size:14px;font-weight:600;padding:9px 16px;border-radius:999px;
+    border:1px solid rgba(255,255,255,.22);background:transparent;color:#fff;cursor:pointer;font-family:inherit;
+    transition:background .15s;
+  }
+  .pill:hover{background:rgba(255,255,255,.1)}
+  .pill.solid{background:#fff;color:var(--navy);border-color:#fff}
+  .pill.solid:hover{background:#e8f0fc}
+
+  .hero-content{position:relative;padding:50px 0 0;max-width:720px}
   .eyebrow{
     display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:600;
     padding:7px 14px;border-radius:999px;background:rgba(255,255,255,.1);
     border:1px solid rgba(255,255,255,.15);letter-spacing:.03em;
   }
-  .eyebrow .pulse{width:8px;height:8px;border-radius:50%;background:#3ee0a5;box-shadow:0 0 0 0 rgba(62,224,165,.7);animation:pulse 2s infinite}
-  @keyframes pulse{70%{box-shadow:0 0 0 10px rgba(62,224,165,0)}100%{box-shadow:0 0 0 0 rgba(62,224,165,0)}}
-  .hero h1{
-    margin-top:22px;font-size:clamp(40px,7vw,68px);font-weight:800;line-height:1.02;letter-spacing:-.035em;
-  }
-  .hero h1 span{
-    background:linear-gradient(90deg,#5ff0bd,#ffb27a);
-    -webkit-background-clip:text;background-clip:text;color:transparent;
-  }
+  .eyebrow .pulse{width:8px;height:8px;border-radius:50%;background:#7cb8ff;box-shadow:0 0 0 0 rgba(124,184,255,.7);animation:pulse 2s infinite}
+  @keyframes pulse{70%{box-shadow:0 0 0 10px rgba(124,184,255,0)}100%{box-shadow:0 0 0 0 rgba(124,184,255,0)}}
+  .hero h1{margin-top:22px;font-size:clamp(40px,7vw,68px);font-weight:800;line-height:1.02;letter-spacing:-.035em}
+  .hero h1 span{background:linear-gradient(90deg,#8cc4ff,#d6e8ff);-webkit-background-clip:text;background-clip:text;color:transparent}
   .hero p.lead{margin-top:20px;font-size:clamp(16px,2vw,19px);opacity:.82;max-width:580px}
 
   /* ---------- TARJETAS ---------- */
-  .cards{
-    position:relative;margin-top:-110px;
-    display:grid;gap:24px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
-  }
+  main{flex:1}
+  .cards{position:relative;margin-top:-110px;display:grid;gap:24px;grid-template-columns:repeat(auto-fit,minmax(320px,1fr))}
   .card{
-    position:relative;display:flex;flex-direction:column;
-    background:var(--white);border-radius:var(--radius);overflow:hidden;
-    box-shadow:var(--shadow);border:1px solid var(--line);
-    transition:transform .2s ease, box-shadow .2s ease;
+    position:relative;display:flex;flex-direction:column;background:var(--white);border-radius:var(--radius);
+    overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--line);transition:transform .2s ease, box-shadow .2s ease;
   }
-  .card:hover{transform:translateY(-6px);box-shadow:0 30px 60px -25px rgba(11,31,51,.45)}
+  .card:not(.soon):hover{transform:translateY(-6px);box-shadow:0 30px 60px -25px rgba(10,31,61,.45)}
   .card-top{padding:30px 30px 26px;position:relative;color:var(--white)}
   .sst .card-top{background:linear-gradient(135deg,var(--sst) 0%,var(--sst-2) 100%)}
   .pesv .card-top{background:linear-gradient(135deg,var(--pesv) 0%,var(--pesv-2) 100%)}
-  .card-top::after{ /* decorativo */
-    content:"";position:absolute;right:-40px;top:-40px;width:180px;height:180px;border-radius:50%;
-    background:rgba(255,255,255,.08);
-  }
-  .card-icon{
-    position:relative;z-index:1;width:58px;height:58px;border-radius:16px;display:grid;place-items:center;
-    background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.25);
-  }
+  .card-top::after{content:"";position:absolute;right:-40px;top:-40px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.08)}
+  .card-icon{position:relative;z-index:1;width:58px;height:58px;border-radius:16px;display:grid;place-items:center;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.25)}
   .card-icon svg{width:30px;height:30px}
   .card-tag{position:relative;z-index:1;margin-top:18px;font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;opacity:.85}
   .card-top h2{position:relative;z-index:1;margin-top:6px;font-size:25px;font-weight:800;line-height:1.2;letter-spacing:-.02em}
+  .badge{
+    position:absolute;z-index:2;top:22px;right:22px;font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+    padding:6px 11px;border-radius:999px;background:rgba(255,255,255,.95);color:var(--pesv-2);display:none;
+  }
+  .card.soon .badge{display:inline-block}
 
   .card-body{padding:26px 30px 30px;display:flex;flex-direction:column;gap:20px;flex:1}
   .card-body > p{color:var(--muted);font-size:15px}
@@ -131,67 +146,59 @@
   .pesv ul.features svg{color:var(--pesv)}
 
   .btn{
-    margin-top:auto;display:flex;align-items:center;justify-content:center;gap:10px;
-    text-decoration:none;font-weight:700;font-size:15.5px;color:var(--white);
-    padding:15px 20px;border-radius:12px;transition:filter .15s, gap .15s;
+    margin-top:auto;display:flex;align-items:center;justify-content:center;gap:10px;text-decoration:none;
+    font-weight:700;font-size:15.5px;color:var(--white);padding:15px 20px;border-radius:12px;transition:filter .15s, gap .15s;
   }
   .sst .btn{background:var(--sst)}
   .pesv .btn{background:var(--pesv)}
-  .btn:hover{filter:brightness(1.08);gap:14px}
+  .btn:hover{filter:brightness(1.1);gap:14px}
   .btn:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
+  .card.soon .btn{background:#e9eef5;color:#7a889a;pointer-events:none;cursor:default}
+  .card.soon .btn svg{display:none}
 
-  /* ---------- PROCESO ---------- */
-  section.process{padding:90px 0 40px}
-  .section-head{text-align:center;max-width:620px;margin:0 auto}
-  .section-head .kicker{font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--sst)}
-  .section-head h3{margin-top:10px;font-size:clamp(26px,4vw,36px);font-weight:800;letter-spacing:-.025em}
-  .section-head p{margin-top:10px;color:var(--muted)}
-  .steps{margin-top:44px;display:grid;gap:18px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));counter-reset:step}
-  .step{
-    background:var(--white);border:1px solid var(--line);border-radius:16px;padding:24px;
-    position:relative;
+  /* ---------- AYUDA ---------- */
+  .help{
+    margin:48px 0 0;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:16px;
+    background:var(--white);border:1px solid var(--line);border-left:4px solid var(--blue);border-radius:14px;padding:20px 24px;
   }
-  .step::before{
-    counter-increment:step;content:"0" counter(step);
-    font-weight:800;font-size:14px;color:var(--white);
-    display:inline-grid;place-items:center;width:36px;height:36px;border-radius:10px;
-    background:var(--navy);
+  .help h3{font-size:16px;font-weight:700}
+  .help p{font-size:14.5px;color:var(--muted)}
+  .help a{
+    display:inline-flex;align-items:center;gap:8px;text-decoration:none;font-weight:700;font-size:14.5px;
+    color:var(--blue);border:1.5px solid var(--blue);padding:10px 18px;border-radius:10px;transition:background .15s,color .15s;
   }
-  .step h4{margin-top:16px;font-size:17px;font-weight:700}
-  .step p{margin-top:6px;font-size:14.5px;color:var(--muted)}
+  .help a:hover{background:var(--blue);color:#fff}
 
-  /* ---------- FOOTER ---------- */
-  footer{margin-top:60px;background:var(--navy);color:rgba(255,255,255,.75);font-size:14px}
-  footer .wrap{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;padding-top:28px;padding-bottom:28px}
+  footer{margin-top:56px;background:var(--navy);color:rgba(255,255,255,.75);font-size:14px}
+  footer .wrap{display:flex;flex-wrap:wrap;gap:16px;align-items:center;justify-content:space-between;padding-top:26px;padding-bottom:26px}
   footer a{text-decoration:none;color:var(--white);font-weight:600}
   footer a:hover{text-decoration:underline}
 
   @media (max-width:640px){
-    .nav-links{display:none}
+    .session .hello{display:none}
     .hero{padding-bottom:130px}
-    .hero-content{padding-top:30px}
+    .hero-content{padding-top:26px}
     .card-top,.card-body{padding-left:22px;padding-right:22px}
+    .brand small{display:none}
   }
-  @media (prefers-reduced-motion:reduce){
-    *{animation:none!important;transition:none!important}
-  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
 
-<!-- ================= HERO ================= -->
 <header class="hero">
   <div class="wrap">
     <nav>
-      <a class="brand" href="./">
+      <a class="brand" id="brand" href="./">
+        <img class="brand-logo" src="logo.png" alt="Saber Laboral" onerror="document.getElementById('brand').classList.add('no-logo')">
         <span class="brand-mark">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><path d="M12 3l8 4v5c0 5-3.5 8.5-8 9-4.5-.5-8-4-8-9V7l8-4z"/></svg>
         </span>
         <span>Saber Laboral<small>Plataforma de auditorías</small></span>
       </a>
-      <div class="nav-links">
-        <a href="sst.html">SG-SST</a>
-        <a href="pesv.html">PESV</a>
+
+      <div class="session" id="session">
+        <a class="pill solid" href="sst.html">Ingresar</a>
       </div>
     </nav>
 
@@ -203,11 +210,9 @@
   </div>
 </header>
 
-<!-- ================= TARJETAS ================= -->
 <main class="wrap">
   <div class="cards">
 
-    <!-- SST -->
     <article class="card sst">
       <div class="card-top">
         <div class="card-icon">
@@ -233,8 +238,8 @@
       </div>
     </article>
 
-    <!-- PESV -->
-    <article class="card pesv">
+    <article class="card pesv" id="card-pesv">
+      <span class="badge">En desarrollo</span>
       <div class="card-top">
         <div class="card-icon">
           <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="20" rx="3"/><circle cx="12" cy="7" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="12" cy="17" r="1.6"/></svg>
@@ -254,7 +259,7 @@
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Hallazgos y plan de acción</li>
           <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Informe final de auditoría</li>
         </ul>
-        <a class="btn" href="pesv.html">Entrar a PESV
+        <a class="btn" href="pesv.html" id="btn-pesv">Entrar a PESV
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></svg>
         </a>
       </div>
@@ -262,20 +267,16 @@
 
   </div>
 
-  <!-- ================= PROCESO ================= -->
-  <section class="process">
-    <div class="section-head">
-      <div class="kicker">Cómo funciona</div>
-      <h3>Un mismo proceso para cada auditoría</h3>
-      <p>Las dos herramientas siguen el ciclo de trabajo del equipo, de principio a fin.</p>
+  <div class="help">
+    <div>
+      <h3>¿Algo no funciona o necesitas ayuda?</h3>
+      <p>Escríbenos y te respondemos lo antes posible.</p>
     </div>
-    <div class="steps">
-      <div class="step"><h4>Planear</h4><p>Crea la auditoría, asigna el auditor responsable y agenda las fechas.</p></div>
-      <div class="step"><h4>Auditar</h4><p>Evalúa cada requisito, registra evidencias y observaciones en campo.</p></div>
-      <div class="step"><h4>Documentar</h4><p>Genera el acta y consolida hallazgos y oportunidades de mejora.</p></div>
-      <div class="step"><h4>Cerrar</h4><p>Emite el informe final con los logos y textos de la organización.</p></div>
-    </div>
-  </section>
+    <a href="mailto:gerencia@saberlaboral.com?subject=Soporte%20plataforma%20de%20auditor%C3%ADas">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>
+      Contactar soporte
+    </a>
+  </div>
 </main>
 
 <footer>
@@ -285,6 +286,53 @@
   </div>
 </footer>
 
-<script>document.getElementById('y').textContent=new Date().getFullYear();</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ================== CONFIGURACIÓN ==================
+   PESV_LISTO: cámbialo a true cuando subas pesv.html.
+   SUPABASE_URL y SUPABASE_KEY: copia los MISMOS valores que usa sst.html
+   (busca "createClient" en sst.html). Si los dejas vacíos, el home
+   simplemente muestra el botón "Ingresar".
+==================================================== */
+const PESV_LISTO   = false;
+const SUPABASE_URL = '';
+const SUPABASE_KEY = '';
+
+document.getElementById('y').textContent = new Date().getFullYear();
+
+// Estado de la tarjeta PESV
+if (!PESV_LISTO) {
+  document.getElementById('card-pesv').classList.add('soon');
+  const b = document.getElementById('btn-pesv');
+  b.textContent = 'Disponible próximamente';
+  b.removeAttribute('href');
+  b.setAttribute('aria-disabled', 'true');
+}
+
+// Saludo si ya hay sesión iniciada en la herramienta
+(async () => {
+  if (!SUPABASE_URL || !SUPABASE_KEY || !window.supabase) return;
+  try {
+    const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) return;
+    const u = session.user;
+    const nombre = (u.user_metadata && (u.user_metadata.nombre || u.user_metadata.full_name || u.user_metadata.name))
+                   || u.email.split('@')[0];
+    const primer = String(nombre).split(' ')[0];
+    const box = document.getElementById('session');
+    box.innerHTML = '';
+    const hello = document.createElement('span');
+    hello.className = 'hello';
+    hello.innerHTML = 'Hola, <b></b>';
+    hello.querySelector('b').textContent = primer.charAt(0).toUpperCase() + primer.slice(1);
+    const out = document.createElement('button');
+    out.className = 'pill';
+    out.textContent = 'Salir';
+    out.onclick = async () => { await sb.auth.signOut(); location.reload(); };
+    box.append(hello, out);
+  } catch (e) { /* si falla, se queda el botón Ingresar */ }
+})();
+</script>
 </body>
 </html>
