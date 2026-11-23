@@ -506,6 +506,28 @@
   .pf-note{font-size:12px;color:var(--muted);margin-top:10px}
   @media(max-width:860px){.perf-grid{grid-template-columns:1fr}}
 
+  /* ---------- Navegación dentro de la auditoría ---------- */
+  #audFilters{position:sticky;top:var(--hdr,78px);z-index:30;background:var(--paper);padding:10px 0;margin:0 0 14px;box-shadow:0 10px 12px -12px rgba(16,38,58,.28)}
+  .cat-steps{display:flex;gap:6px;overflow-x:auto;width:100%;padding:2px 0 6px;scrollbar-width:thin}
+  .cat-step{flex:none;display:flex;align-items:center;gap:7px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:4px 12px 4px 4px;font-size:12.5px;font-weight:600;color:#44576a;cursor:pointer;transition:background .15s,border-color .15s}
+  .cat-step:hover{border-color:var(--brand-2)}
+  .cat-step .cs-n{width:24px;height:24px;border-radius:50%;background:var(--paper);display:grid;place-items:center;font-size:11.5px;font-weight:800;color:var(--muted)}
+  .cat-step .cs-p{font-size:11.5px;font-weight:700;color:var(--muted)}
+  .cat-step.on{border-color:var(--brand-2);background:#e8f2fa;color:var(--brand-2)}
+  .cat-step.on .cs-n{background:var(--brand-2);color:#fff}
+  .cat-step.ok .cs-n{background:var(--ok);color:#fff}
+  .item{scroll-margin-top:calc(var(--hdr,78px) + var(--barra,100px) + 12px)}
+  .std-title .exp-tools{display:flex;gap:6px;margin-left:12px}
+  .exp-tools .chip{border:1px solid var(--line);background:#fff;border-radius:20px;padding:3px 10px;font-size:11.5px;font-weight:600;color:var(--muted);cursor:pointer}
+  .exp-tools .chip.on{background:var(--brand);border-color:var(--brand);color:var(--on-brand)}
+  #audFilters .search input{min-width:240px}
+  .item-nav{display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-top:1px dashed var(--line);padding-top:12px;margin-top:2px}
+  .item-nav .info{flex:1;min-width:120px;text-align:center;font-size:12.5px;color:var(--muted)}
+  .item-nav .btn.listo{animation:listo 1.8s ease-out infinite}
+  @keyframes listo{0%{box-shadow:0 0 0 0 rgba(5,222,194,.65)}70%{box-shadow:0 0 0 10px rgba(5,222,194,0)}100%{box-shadow:0 0 0 0 rgba(5,222,194,0)}}
+  #itemsHost.locked .item-nav{pointer-events:auto}
+  @media print{#audFilters{position:static;box-shadow:none}}
+  @media (prefers-reduced-motion:reduce){.item-nav .btn.listo{animation:none}}
   /* ---------- Menú lateral flotante ---------- */
   #rail{position:fixed;left:16px;top:50%;transform:translateY(-50%);z-index:45;display:flex;flex-direction:column;gap:2px;
     width:62px;padding:9px;box-sizing:border-box;background:rgba(255,255,255,.94);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);
@@ -2235,7 +2257,7 @@ document.getElementById("mSave").onclick=async function(){
 let audFilter="all", audSearch="", audPage=0;
 window.openAudit=function(id){
   audPage=0; currentId=id; { const x=DB.empresas.find(e=>e.id===id); if(x) dashTab=x.estado==='cerrada'?"fin":"curso"; } audFilter="all"; audSearch="";
-  showView("viewAudit"); renderAudit();
+  OPEN.clear(); showView("viewAudit"); renderAudit(); abrirPrimeroPend();
 };
 // Ítems filtrados y agrupados por categoría (una página por categoría), en orden PHVA
 function audCats(e){
@@ -2271,8 +2293,17 @@ function pagerHtml(cats){
 window.audGo=function(k){
   const e=curEmp(); const {cats}=audCats(e);
   if(k<0||k>=cats.length) return;
-  audPage=k; renderAudit(); window.scrollTo({top:0,behavior:"smooth"});
+  audPage=k; renderAudit(); abrirPrimeroPend(); window.scrollTo({top:0,behavior:"smooth"});
 };
+function expToolsHtml(){
+  return `<button class="chip sm" type="button" onclick="toggleAll(true)">Expandir todo</button><button class="chip sm" type="button" onclick="toggleAll(false)">Contraer todo</button><button class="chip sm ${modoUno?'on':''}" type="button" onclick="setModoUno()" aria-pressed="${modoUno}" title="Al abrir un ítem se cierra el anterior">Un ítem a la vez</button>`;
+}
+function medirBarras(){
+  const h=document.querySelector("header.top"), f=document.getElementById("audFilters"), st=document.documentElement.style;
+  if(h) st.setProperty("--hdr",h.offsetHeight+"px");
+  if(f&&f.offsetHeight) st.setProperty("--barra",f.offsetHeight+"px");
+}
+window.addEventListener("resize",()=>medirBarras());
 function renderHead(){
   const e=curEmp(); if(!e)return;
   const s=computeScore(e); const cat=categoria(s.pct);
@@ -2332,11 +2363,19 @@ function renderHead(){
   const chips=[["all","Todos"],["pend","Pendientes"],["cumple","Conformidad"],["no","No conformidad"],["mejora","Conf. con O.M."],["na","No aplica"]];
   const inp=document.querySelector('#audFilters .search input');
   const hadFocus = inp && document.activeElement===inp;
-  document.getElementById("audFilters").innerHTML =
+  const catsV=audCats(e).cats;
+  const pasos=catsV.length?`<div class="cat-steps no-print" role="tablist" aria-label="Categorías">${catsV.map((ct,k)=>{
+      const ev=ct.items.filter(i=>e.ratings?.[i.c]?.v).length, tot=ct.items.length, ok=ev===tot;
+      return `<button type="button" role="tab" aria-selected="${k===audPage}" class="cat-step ${k===audPage?'on':''} ${ok?'ok':''}" onclick="audGo(${k})" title="${esc(ct.ciclo)} · ${esc(ct.est)}"><span class="cs-n">${ok?'✓':k+1}</span><span class="cs-t">${esc(catNombre(ct))}</span><span class="cs-p">${ev}/${tot}</span></button>`;
+    }).join("")}</div>`:'';
+  document.getElementById("audFilters").innerHTML = pasos +
     chips.map(([k,l])=>`<button class="chip ${audFilter===k?'on':''}" onclick="setFilter('${k}')">${l} · ${counts[k]}</button>`).join("")
-    +`<div class="exp-tools no-print"><button class="chip" onclick="toggleAll(true)">Expandir todo</button><button class="chip" onclick="toggleAll(false)">Contraer todo</button></div>`
-    +`<div class="search"><input placeholder="Buscar ítem o requisito..." value="${esc(audSearch)}" oninput="setSearch(this.value)">${pagerHtml(audCats(e).cats)}</div>`;
+    +`<div class="search"><input placeholder="Buscar ítem o requisito..." value="${esc(audSearch)}" oninput="setSearch(this.value)" aria-label="Buscar ítem o requisito"></div>`;
+  const tl=document.getElementById("audTools");
+  if(tl) tl.innerHTML=expToolsHtml();
   if(hadFocus){const n=document.querySelector('#audFilters .search input'); n.focus(); n.setSelectionRange(n.value.length,n.value.length);}
+  medirBarras();
+  const on=document.querySelector('#audFilters .cat-step.on'); if(on&&on.scrollIntoView) on.scrollIntoView({block:'nearest',inline:'nearest'});
 }
 
 function itemHtml(it, e){
@@ -2408,19 +2447,63 @@ function itemHtml(it, e){
       <textarea placeholder="Criterio legal (si lo dejas vacío, el informe usa la normatividad aplicable y el criterio del ítem)" oninput="setField('${it.c}','crit',this.value)">${esc(r.crit||'')}</textarea>
       <textarea id="rec-${it.c}" placeholder="Recomendación / acciones para dar cumplimiento (alimenta el plan de acción del informe)..." oninput="setField('${it.c}','rec',this.value)">${esc(r.rec||'')}</textarea>
     </div>
+    ${itemNavHtml(it,e,v)}
     </div>
   </div>`;
 }
+// Barra al final de cada ítem: anterior / siguiente (pasa de categoría sola)
+function itemNavHtml(it,e,v){
+  const lista=audCats(e).items, i=lista.findIndex(x=>x.c===it.c);
+  const ant=vecinoItem(it.c,-1), sig=vecinoItem(it.c,1);
+  const pend=itemsForSet(e.set).some(x=>!e.ratings?.[x.c]?.v && x.c!==it.c);
+  const fin = sig ? `<button class="btn sm ${v?'listo':''}" type="button" onclick="irItem('${it.c}',1)">Siguiente ítem · ${sig.c} →</button>`
+    : pend ? `<button class="btn sm ${v?'listo':''}" type="button" onclick="nextPend()">Ir al siguiente pendiente ↓</button>`
+    : `<button class="btn sm ${v?'listo':''}" type="button" onclick="openReport('${e.id}')">Ver informe →</button>`;
+  return `<div class="item-nav no-print">
+      <button class="btn sec sm" type="button" onclick="irItem('${it.c}',-1)" ${ant?'':'disabled'}>← Anterior${ant?' · '+ant.c:''}</button>
+      <span class="info">${i>=0?`Ítem ${i+1} de ${lista.length}`:''}${v?' · <b style="color:var(--ok)">calificado</b>':''}</span>
+      ${fin}
+    </div>`;
+}
 
 const OPEN=new Set();   // ítems desplegados (se conserva al recalificar o filtrar)
-window.toggleItem=function(c,force){
+let modoUno=true;       // un ítem abierto a la vez (preferencia de pantalla)
+try{ modoUno=localStorage.getItem("auditor_uno_a_la_vez")!=="0"; }catch(_){}
+window.setModoUno=function(){ modoUno=!modoUno; try{ localStorage.setItem("auditor_uno_a_la_vez",modoUno?"1":"0"); }catch(_){} renderHead(); };
+// ítem anterior o siguiente dentro de la lista visible (respeta filtros y búsqueda), en orden PHVA
+function vecinoItem(c,dir){
+  const e=curEmp(), g=itemsForSet(e.set).map(x=>x.c), gi=g.indexOf(c), lista=audCats(e).items;
+  return dir>0 ? (lista.find(x=>g.indexOf(x.c)>gi)||null) : ([...lista].reverse().find(x=>g.indexOf(x.c)<gi)||null);
+}
+function abrirItem(code){
+  const e=curEmp(), {cats}=audCats(e), k=cats.findIndex(ct=>ct.items.some(i=>i.c===code));
+  if(k<0) return;
+  if(k!==audPage){
+    if(modoUno) [...OPEN].forEach(x=>{ if(x!==code) OPEN.delete(x); });
+    OPEN.add(code); audPage=k; renderAudit();
+  } else toggleItem(code,true);   // cierra los demás abiertos de esta página
+  requestAnimationFrame(()=>{ const t=document.getElementById("it-"+code); if(!t) return;
+    t.scrollIntoView({behavior:"smooth",block:"start"}); t.classList.remove("flash"); void t.offsetWidth; t.classList.add("flash"); });
+}
+window.irItem=function(c,dir){
+  const t=vecinoItem(c,dir);
+  if(!t){ toast(dir>0?"Es el último ítem de la lista.":"Es el primer ítem de la lista."); return; }
+  abrirItem(t.c);
+};
+function abrirPrimeroPend(){
+  const e=curEmp(); if(!e||e.estado==='cerrada') return;
+  const c=audCats(e).cats[audPage]; if(!c||c.items.some(i=>OPEN.has(i.c))) return;
+  const p=c.items.find(i=>!e.ratings?.[i.c]?.v); if(p) toggleItem(p.c,true);
+}
+window.toggleItem=function(c,force,exclusivo){
   const on = force===undefined ? !OPEN.has(c) : !!force;
+  if(on && modoUno && exclusivo!==false) [...OPEN].forEach(x=>{ if(x!==c) toggleItem(x,false,false); });
   if(on) OPEN.add(c); else OPEN.delete(c);
   const el=document.getElementById("it-"+c);
   if(el){ el.classList.toggle("open",on); const h=el.querySelector(".top-row"); if(h) h.setAttribute("aria-expanded",on); }
 };
 window.toggleAll=function(on){
-  document.querySelectorAll("#itemsHost .item").forEach(el=>toggleItem(el.id.slice(3),on));
+  document.querySelectorAll("#itemsHost .item").forEach(el=>toggleItem(el.id.slice(3),on,false));
 };
 function renderAudit(){
   const e=curEmp(); if(!e)return;
@@ -2437,7 +2520,7 @@ function renderAudit(){
   const evaluados=c.items.filter(it=>e.ratings[it.c]?.v).length;
   const prev=cats[audPage-1], next=cats[audPage+1];
   host.innerHTML=`<div class="cycle"><div class="cycle-h">${c.ciclo}<span class="w">Ciclo ${c.cicloW}</span></div>
-    <div class="std-group"><div class="std-title">${esc(c.est)}<span class="cat-prog">${evaluados} de ${c.items.length} ítems evaluados</span></div>
+    <div class="std-group"><div class="std-title">${esc(c.est)}<span class="cat-prog">${evaluados} de ${c.items.length} ítems evaluados</span><span class="exp-tools no-print" id="audTools">${expToolsHtml()}</span></div>
     ${c.items.map(it=>itemHtml(it,e)).join("")}</div></div>
     <div class="pager-bottom no-print">
       ${prev?`<button class="btn sec" type="button" onclick="audGo(${audPage-1})">← ${esc(catNombre(prev))}</button>`:'<span></span>'}
